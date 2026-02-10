@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Telegram Clone</title>
+    <link rel="stylesheet" href="./style/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="search-bar">
+                <i class="fas fa-bars"></i>
+                <input type="text" placeholder="Poisk">
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active">Vse chati <span class="badge">34</span></div>
+            <div class="tab">Groups <span class="badge">10</span></div>
+            <div class="tab">Channels</div>
+        </div>
+
+        <div class="chat-list">
+            <div class="chat-item create-btn" onclick="createGroup()">
+                <div class="avatar blue"><i class="fas fa-users"></i></div>
+                <div class="chat-info">
+                    <div class="chat-name">Yangi guruh yaratish</div>
+                </div>
+            </div>
+            </div>
+    </aside>
+
+    <main class="chat-window">
+        <header class="chat-header">
+            <div class="header-details">
+                <div class="active-chat-name">Speaking | Easy C1</div>
+                <div class="active-chat-status">31 107 podpischikov</div>
+            </div>
+            <div class="header-actions">
+                <i class="fas fa-search"></i>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </header>
+
+        <div class="messages-container" id="messageBox">
+            </div>
+
+        <footer class="chat-footer">
+            <form id="messageForm" class="message-input-wrapper">
+                <i class="far fa-smile"></i>
+                <input type="text" id="msgInput" placeholder="Xabar yozing..." autocomplete="off">
+                <i class="fas fa-paperclip"></i>
+                <button type="submit" id="sendBtn" class="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </footer>
+    </main>
+</div>
+    <script src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+app:
+  name: app-go
+  env: dev
+
+server:
+
+database:
+  MAX_OPEN_CONNS: 9
+  MAX_IDLE_CONNS: 6
+  MAX_IDLE_TIME: 15m

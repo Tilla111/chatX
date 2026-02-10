@@ -1,0 +1,5 @@
+CREATE TABLE chats (
+  id BIGSERIAL PRIMARY KEY,
+  chat_type VARCHAR(20) NOT NULL, -- "private" | "group"
+  created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
