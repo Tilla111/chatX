@@ -1,0 +1,654 @@
+basePath: /api/v1
+definitions:
+  main.group:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      id:
+        type: integer
+      name:
+        maxLength: 255
+        type: string
+    required:
+    - description
+    - name
+    type: object
+  main.groupReq:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      receiver1_id:
+        items:
+          type: integer
+        maxItems: 255
+        type: array
+      sender_id:
+        maximum: 255
+        type: integer
+    required:
+    - description
+    - name
+    - receiver1_id
+    - sender_id
+    type: object
+  service.ChatInfo:
+    properties:
+      chat_id:
+        type: integer
+      chat_name:
+        type: string
+      chat_type:
+        type: string
+      joined_at:
+        type: string
+      last_message:
+        type: string
+      last_message_at:
+        type: string
+      unread_count:
+        description: Yangi qo'shildi
+        type: integer
+      user_role:
+        type: string
+    type: object
+  service.Message:
+    properties:
+      chat_id:
+        type: integer
+      chat_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_read:
+        type: boolean
+      message_text:
+        type: string
+      sender_id:
+        type: integer
+      sender_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  service.MessageDetail:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      sender_id:
+        type: integer
+      sender_name:
+        type: string
+    type: object
+  service.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+  store.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Api for gophers Chat Project !
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: ChatX API
+paths:
+  /chats:
+    get:
+      consumes:
+      - application/json
+      description: Tizimga kirgan foydalanuvchining barcha shaxsiy va guruh suhbatlarini
+        qaytaradi.
+      parameters:
+      - description: Chat nomi yoki oxirgi xabar bo'yicha qidirish
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chatlar ro'yxati muvaffaqiyatli qaytarildi
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/service.ChatInfo'
+              type: array
+            type: object
+        "401":
+          description: Avtorizatsiyadan o'tilmagan
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Serverning ichki xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Foydalanuvchi chatlarini ro'yxatini olish
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      description: Yangi guruh yaratadi va foydalanuvchilarni unga qo'shadi
+      parameters:
+      - description: Guruh ma'lumotlari
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.groupReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Guruh IDsi qaytadi
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "400":
+          description: Noto'g'ri so'rov yuborilgan
+          schema: {}
+        "500":
+          description: Server xatoligi
+          schema: {}
+      summary: Guruh suhbatini yaratish
+      tags:
+      - chats
+  /chats/{chat_id}:
+    delete:
+      description: Berilgan ID bo'yicha chatni (shaxsiy yoki guruh) butunlay o'chirib
+        tashlaydi.
+      parameters:
+      - description: O'chirilishi kerak bo'lgan chat IDsi
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Muvaffaqiyatli o'chirildi (kontent qaytarilmaydi)
+        "400":
+          description: Noto'g'ri ID formati
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Chat topilmadi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Serverning ichki xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Chatni o'chirish
+      tags:
+      - chats
+  /chats/{chat_id}/{user_id}/member:
+    delete:
+      description: Guruh suhbatidan foydalanuvchini olib tashlaydi. Faqat guruh admini
+        yoki foydalanuvchining o'zi (chiqib ketish) bajara oladi.
+      parameters:
+      - description: Chat (guruh) IDsi
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      - description: O'chirilishi kerak bo'lgan foydalanuvchi IDsi
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Muvaffaqiyatli o'chirildi
+        "400":
+          description: ID xato yuborilgan
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: A'zo yoki chat topilmadi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Guruhdan a'zoni o'chirish
+      tags:
+      - members
+  /chats/{chat_id}/messages:
+    get:
+      description: Berilgan chat_id bo'yicha barcha xabarlar tarixini qaytaradi.
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Xabarlar ro''yxati: {"data": [MessageDetail ob''ektlari]}'
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/service.MessageDetail'
+              type: array
+            type: object
+        "400":
+          description: Noto'g'ri ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Chat xabarlarini olish
+      tags:
+      - messages
+  /groups:
+    post:
+      consumes:
+      - application/json
+      description: Yangi guruh chatini yaratadi va a'zolarni biriktiradi
+      parameters:
+      - description: Guruh yaratish ma'lumotlari
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.groupReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Guruh muvaffaqiyatli yaratildi
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Noto'g'ri so'rov yoki validatsiya xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server ichki xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Guruh suhbatini yaratish
+      tags:
+      - groups
+  /groups/{chat_id}:
+    put:
+      consumes:
+      - application/json
+      description: Mavjud guruhning nomi va tavsifini o'zgartiradi. Chat ID path orqali
+        yuboriladi.
+      parameters:
+      - description: Yangilanadigan chat (guruh) IDsi
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      - description: Yangi guruh ma'lumotlari
+        in: body
+        name: request_body
+        required: true
+        schema:
+          $ref: '#/definitions/main.group'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Muvaffaqiyatli yangilandi
+          schema:
+            type: string
+        "400":
+          description: Noto'g'ri ID yoki validatsiya xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Guruh topilmadi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Guruh ma'lumotlarini yangilash
+      tags:
+      - groups
+  /groups/{chat_id}/members:
+    get:
+      description: Chat ID bo'yicha barcha a'zolar (foydalanuvchilar) ro'yxatini qaytaradi
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Muvaffaqiyatli: {"data": [User ob''ektlari]}'
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/store.User'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Guruh a'zolarini olish
+      tags:
+      - members
+  /health:
+    get:
+      description: Serverning ishchi holati va versiyasini qaytaradi.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Masalan: {"data": {"status": "available", "version": "1.0.0"}}'
+          schema:
+            additionalProperties:
+              additionalProperties:
+                type: string
+              type: object
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: API holatini tekshirish
+      tags:
+      - system
+  /messages:
+    post:
+      consumes:
+      - application/json
+      description: Yangi xabar yaratadi va uni guruh a'zolariga WebSocket orqali real-vaqtda
+        tarqatadi.
+      parameters:
+      - description: Xabar ma'lumotlari
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.Message'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'Xabar yaratildi: {"data": {message_object}}'
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/service.Message'
+            type: object
+        "400":
+          description: Noto'g'ri JSON formati
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xabar yuborish
+      tags:
+      - messages
+  /messages/{chat_id}:
+    patch:
+      description: Chatdagi barcha xabarlarni joriy foydalanuvchi uchun o'qilgan holatiga
+        o'tkazadi va bu haqda boshqa a'zolarga xabar beradi.
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Muvaffaqiyatli: {"data": {"status": "success"}}'
+          schema:
+            additionalProperties:
+              additionalProperties:
+                type: string
+              type: object
+            type: object
+        "400":
+          description: Noto'g'ri ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xabarlarni o'qilgan deb belgilash
+      tags:
+      - messages
+  /messages/{id}:
+    delete:
+      description: Xabarni ma'lumotlar bazasidan o'chiradi va WebSocket orqali barcha
+        chat a'zolariga xabar o'chirilganligi haqida signal yuboradi.
+      parameters:
+      - description: O'chirilishi kerak bo'lgan xabar IDsi
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Muvaffaqiyatli: {"data": {"result": "deleted"}}'
+          schema:
+            additionalProperties:
+              additionalProperties:
+                type: string
+              type: object
+            type: object
+        "400":
+          description: Noto'g'ri ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Xabar topilmadi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xabarni o'chirish
+      tags:
+      - messages
+    patch:
+      consumes:
+      - application/json
+      description: Yuborilgan xabar matnini o'zgartiradi va bu haqda guruh a'zolariga
+        WebSocket orqali xabar beradi.
+      parameters:
+      - description: Xabar IDsi
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tahrirlash ma'lumotlari (message_text va chat_id)
+        in: body
+        name: payload
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Muvaffaqiyatli: {"data": {"result": "updated"}}'
+          schema:
+            additionalProperties:
+              additionalProperties:
+                type: string
+              type: object
+            type: object
+        "400":
+          description: Noto'g'ri JSON yoki ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Xabarni tahrirlash
+      tags:
+      - messages
+  /users/{user_id}:
+    get:
+      description: Tizimdagi foydalanuvchilarni qidirish va sahifalangan ro'yxatini
+        qaytaradi.
+      parameters:
+      - description: So'rov yuborayotgan foydalanuvchi IDsi
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - default: 20
+        description: Natijalar soni
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Surilish (offset)
+        in: query
+        name: offset
+        type: integer
+      - description: Qidiruv matni (ism yoki login)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Foydalanuvchilar: {"data": [User ob''ektlari]}'
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/service.User'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Foydalanuvchilar ro'yxatini olish
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

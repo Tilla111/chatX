@@ -4,12 +4,16 @@ import (
 	"chatX/internal/store"
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
+	"fmt"
 	"net/http"
 	"time"
+
+	"chatX/docs"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type application struct {
@@ -24,6 +28,7 @@ type config struct {
 	DB      DBConfig
 	ENV     string
 	Upgrade websocket.Upgrader
+	apiURL  string
 }
 
 type DBConfig struct {
@@ -53,6 +58,9 @@ func (app *application) mount() *chi.Mux {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheck)
 		r.Get("/ws", app.handleWebSocket)
+
+		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.Addr)
+		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Route("/chats", func(r chi.Router) {
 			r.Post("/", app.CreatechatHandler)
@@ -91,6 +99,10 @@ func (app *application) mount() *chi.Mux {
 }
 
 func (app *application) run(Addr string, handler *chi.Mux) error {
+	// Docs
+	docs.SwaggerInfo.Version = Version
+	docs.SwaggerInfo.Host = app.config.apiURL
+	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	srv := &http.Server{
 		Addr:         Addr,

@@ -50,3 +50,7 @@ clean: down
 	@echo "Volume va tarmoqlarni tozalash..."
 	docker volume prune 
 	docker network prune 
+
+.PHONY: gen-docs
+gen-docs:
+	@swag init -g api/main.go -d cmd,internal && swag fmt

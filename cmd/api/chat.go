@@ -16,6 +16,17 @@ type ChatReq struct {
 	ReceiverID int64 `json:"receiver_id" validate:"required,max=255"`
 }
 
+// CreateGroupChatHandler godoc
+// @Summary      Guruh suhbatini yaratish
+// @Description  Yangi guruh yaratadi va foydalanuvchilarni unga qo'shadi
+// @Tags         chats
+// @Accept       json
+// @Produce      json
+// @Param        payload body groupReq true "Guruh ma'lumotlari"
+// @Success      201  {object}  map[string]int64 "Guruh IDsi qaytadi"
+// @Failure      400  {object}  error "Noto'g'ri so'rov yuborilgan"
+// @Failure      500  {object}  error "Server xatoligi"
+// @Router       /chats [post]
 func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req ChatReq
@@ -56,6 +67,17 @@ type groupReq struct {
 	Description string  `json:"description" validate:"required,max=255"`
 }
 
+// CreateGroupHandler godoc
+// @Summary      Guruh suhbatini yaratish
+// @Description  Yangi guruh chatini yaratadi va a'zolarni biriktiradi
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        payload body groupReq true "Guruh yaratish ma'lumotlari"
+// @Success      201  {object}  map[string]interface{} "Guruh muvaffaqiyatli yaratildi"
+// @Failure      400  {object}  map[string]string      "Noto'g'ri so'rov yoki validatsiya xatosi"
+// @Failure      500  {object}  map[string]string      "Server ichki xatosi"
+// @Router       /groups [post]
 func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req groupReq
@@ -96,6 +118,17 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 
 }
 
+// GetUserChatsHandler godoc
+// @Summary      Foydalanuvchi chatlarini ro'yxatini olish
+// @Description  Tizimga kirgan foydalanuvchining barcha shaxsiy va guruh suhbatlarini qaytaradi.
+// @Tags         chats
+// @Accept       json
+// @Produce      json
+// @Param        search  query     string  false  "Chat nomi yoki oxirgi xabar bo'yicha qidirish"
+// @Success      200     {object}   map[string][]service.ChatInfo  "Chatlar ro'yxati muvaffaqiyatli qaytarildi"
+// @Failure      401     {object}  map[string]string "Avtorizatsiyadan o'tilmagan"
+// @Failure      500     {object}  map[string]string "Serverning ichki xatosi"
+// @Router       /chats [get]
 func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID := int64(1)
@@ -119,6 +152,19 @@ type group struct {
 	Description string `json:"description" validate:"required,max=255"`
 }
 
+// UpdateChatHandler godoc
+// @Summary      Guruh ma'lumotlarini yangilash
+// @Description  Mavjud guruhning nomi va tavsifini o'zgartiradi. Chat ID path orqali yuboriladi.
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        chat_id      path      int     true  "Yangilanadigan chat (guruh) IDsi"
+// @Param        request_body  body      group   true  "Yangi guruh ma'lumotlari"
+// @Success      200           {string}  string  "Muvaffaqiyatli yangilandi"
+// @Failure      400           {object}  map[string]string "Noto'g'ri ID yoki validatsiya xatosi"
+// @Failure      404           {object}  map[string]string "Guruh topilmadi"
+// @Failure      500           {object}  map[string]string "Server xatosi"
+// @Router       /groups/{chat_id} [put]
 func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
@@ -159,6 +205,16 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteChatHandler godoc
+// @Summary      Chatni o'chirish
+// @Description  Berilgan ID bo'yicha chatni (shaxsiy yoki guruh) butunlay o'chirib tashlaydi.
+// @Tags         chats
+// @Param        chat_id  path      int  true  "O'chirilishi kerak bo'lgan chat IDsi"
+// @Success      204      "Muvaffaqiyatli o'chirildi (kontent qaytarilmaydi)"
+// @Failure      400      {object}  map[string]string "Noto'g'ri ID formati"
+// @Failure      404      {object}  map[string]string "Chat topilmadi"
+// @Failure      500      {object}  map[string]string "Serverning ichki xatosi"
+// @Router       /chats/{chat_id} [delete]
 func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {

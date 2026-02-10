@@ -1,0 +1,969 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Api for gophers Chat Project !",
+        "title": "ChatX API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/chats": {
+            "get": {
+                "description": "Tizimga kirgan foydalanuvchining barcha shaxsiy va guruh suhbatlarini qaytaradi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Foydalanuvchi chatlarini ro'yxatini olish",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chat nomi yoki oxirgi xabar bo'yicha qidirish",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chatlar ro'yxati muvaffaqiyatli qaytarildi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/service.ChatInfo"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Avtorizatsiyadan o'tilmagan",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Serverning ichki xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Yangi guruh yaratadi va foydalanuvchilarni unga qo'shadi",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Guruh suhbatini yaratish",
+                "parameters": [
+                    {
+                        "description": "Guruh ma'lumotlari",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.groupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Guruh IDsi qaytadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri so'rov yuborilgan",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Server xatoligi",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/chats/{chat_id}": {
+            "delete": {
+                "description": "Berilgan ID bo'yicha chatni (shaxsiy yoki guruh) butunlay o'chirib tashlaydi.",
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Chatni o'chirish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "O'chirilishi kerak bo'lgan chat IDsi",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Muvaffaqiyatli o'chirildi (kontent qaytarilmaydi)"
+                    },
+                    "400": {
+                        "description": "Noto'g'ri ID formati",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chat topilmadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Serverning ichki xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/chats/{chat_id}/messages": {
+            "get": {
+                "description": "Berilgan chat_id bo'yicha barcha xabarlar tarixini qaytaradi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Chat xabarlarini olish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Chat ID",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xabarlar ro'yxati: {\"data\": [MessageDetail ob'ektlari]}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/service.MessageDetail"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/chats/{chat_id}/{user_id}/member": {
+            "delete": {
+                "description": "Guruh suhbatidan foydalanuvchini olib tashlaydi. Faqat guruh admini yoki foydalanuvchining o'zi (chiqib ketish) bajara oladi.",
+                "tags": [
+                    "members"
+                ],
+                "summary": "Guruhdan a'zoni o'chirish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Chat (guruh) IDsi",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "O'chirilishi kerak bo'lgan foydalanuvchi IDsi",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Muvaffaqiyatli o'chirildi"
+                    },
+                    "400": {
+                        "description": "ID xato yuborilgan",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "A'zo yoki chat topilmadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups": {
+            "post": {
+                "description": "Yangi guruh chatini yaratadi va a'zolarni biriktiradi",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Guruh suhbatini yaratish",
+                "parameters": [
+                    {
+                        "description": "Guruh yaratish ma'lumotlari",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.groupReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Guruh muvaffaqiyatli yaratildi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri so'rov yoki validatsiya xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server ichki xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/{chat_id}": {
+            "put": {
+                "description": "Mavjud guruhning nomi va tavsifini o'zgartiradi. Chat ID path orqali yuboriladi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Guruh ma'lumotlarini yangilash",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Yangilanadigan chat (guruh) IDsi",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Yangi guruh ma'lumotlari",
+                        "name": "request_body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.group"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Muvaffaqiyatli yangilandi",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri ID yoki validatsiya xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Guruh topilmadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/{chat_id}/members": {
+            "get": {
+                "description": "Chat ID bo'yicha barcha a'zolar (foydalanuvchilar) ro'yxatini qaytaradi",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "members"
+                ],
+                "summary": "Guruh a'zolarini olish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Chat ID",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Muvaffaqiyatli: {\"data\": [User ob'ektlari]}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/store.User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Serverning ishchi holati va versiyasini qaytaradi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "API holatini tekshirish",
+                "responses": {
+                    "200": {
+                        "description": "Masalan: {\"data\": {\"status\": \"available\", \"version\": \"1.0.0\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages": {
+            "post": {
+                "description": "Yangi xabar yaratadi va uni guruh a'zolariga WebSocket orqali real-vaqtda tarqatadi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Xabar yuborish",
+                "parameters": [
+                    {
+                        "description": "Xabar ma'lumotlari",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.Message"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Xabar yaratildi: {\"data\": {message_object}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/service.Message"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri JSON formati",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/{chat_id}": {
+            "patch": {
+                "description": "Chatdagi barcha xabarlarni joriy foydalanuvchi uchun o'qilgan holatiga o'tkazadi va bu haqda boshqa a'zolarga xabar beradi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Xabarlarni o'qilgan deb belgilash",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Chat ID",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Muvaffaqiyatli: {\"data\": {\"status\": \"success\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/{id}": {
+            "delete": {
+                "description": "Xabarni ma'lumotlar bazasidan o'chiradi va WebSocket orqali barcha chat a'zolariga xabar o'chirilganligi haqida signal yuboradi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Xabarni o'chirish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "O'chirilishi kerak bo'lgan xabar IDsi",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Muvaffaqiyatli: {\"data\": {\"result\": \"deleted\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Xabar topilmadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Yuborilgan xabar matnini o'zgartiradi va bu haqda guruh a'zolariga WebSocket orqali xabar beradi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Xabarni tahrirlash",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Xabar IDsi",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tahrirlash ma'lumotlari (message_text va chat_id)",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Muvaffaqiyatli: {\"data\": {\"result\": \"updated\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Noto'g'ri JSON yoki ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}": {
+            "get": {
+                "description": "Tizimdagi foydalanuvchilarni qidirish va sahifalangan ro'yxatini qaytaradi.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Foydalanuvchilar ro'yxatini olish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "So'rov yuborayotgan foydalanuvchi IDsi",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Natijalar soni",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Surilish (offset)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Qidiruv matni (ism yoki login)",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Foydalanuvchilar: {\"data\": [User ob'ektlari]}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/service.User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.group": {
+            "type": "object",
+            "required": [
+                "description",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
+        "main.groupReq": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "receiver1_id",
+                "sender_id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "receiver1_id": {
+                    "type": "array",
+                    "maxItems": 255,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "sender_id": {
+                    "type": "integer",
+                    "maximum": 255
+                }
+            }
+        },
+        "service.ChatInfo": {
+            "type": "object",
+            "properties": {
+                "chat_id": {
+                    "type": "integer"
+                },
+                "chat_name": {
+                    "type": "string"
+                },
+                "chat_type": {
+                    "type": "string"
+                },
+                "joined_at": {
+                    "type": "string"
+                },
+                "last_message": {
+                    "type": "string"
+                },
+                "last_message_at": {
+                    "type": "string"
+                },
+                "unread_count": {
+                    "description": "Yangi qo'shildi",
+                    "type": "integer"
+                },
+                "user_role": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.Message": {
+            "type": "object",
+            "properties": {
+                "chat_id": {
+                    "type": "integer"
+                },
+                "chat_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "message_text": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "integer"
+                },
+                "sender_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.MessageDetail": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "sender_id": {
+                    "type": "integer"
+                },
+                "sender_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
