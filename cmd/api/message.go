@@ -22,20 +22,20 @@ import (
 func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.Message
 	if err := readJSON(w, r, &req); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
 	msg, err := app.services.MessageSRV.Create(ctx, req)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	memberUsers, err := app.services.MemberSRV.GetByChatID(ctx, int(msg.ChatID))
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -71,14 +71,14 @@ func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Requ
 func (app *application) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
 	msg, err := app.services.MessageSRV.GetByChatID(ctx, int64(id))
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -104,13 +104,13 @@ func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request
 
 	ctx := r.Context()
 	if err := app.services.MessageSRV.MarkChatAsRead(ctx, chatID, userID); err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	memberUsers, err := app.services.MemberSRV.GetByChatID(ctx, int(chatID))
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -148,12 +148,12 @@ func (app *application) MessageUpdateHandler(w http.ResponseWriter, r *http.Requ
 		ChatID      int64  `json:"chat_id"` // WS uchun kerak
 	}
 	if err := readJSON(w, r, &input); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	if err := app.services.MessageSRV.UpdateMessage(r.Context(), msgID, userID, input.MessageText); err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -187,7 +187,7 @@ func (app *application) MessageDeleteHandler(w http.ResponseWriter, r *http.Requ
 	msg, _ := app.services.MessageSRV.GetByID(r.Context(), msgID)
 
 	if err := app.services.MessageSRV.DeleteMessage(r.Context(), msgID, userID); err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 

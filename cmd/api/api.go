@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/websocket"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
+	"go.uber.org/zap"
 )
 
 type application struct {
@@ -21,6 +22,7 @@ type application struct {
 	strore   store.Storage
 	services service.Services
 	ws       *ws.Hub
+	logger   zap.SugaredLogger
 }
 
 type config struct {

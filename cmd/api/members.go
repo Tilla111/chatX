@@ -21,19 +21,19 @@ import (
 func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
 	members, err := app.services.MemberSRV.GetByChatID(ctx, id)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := app.jsonResponse(w, http.StatusOK, members); err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 }
@@ -52,13 +52,13 @@ func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request
 func (app *application) DeleteMemberHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	uid, err := strconv.Atoi(chi.URLParam(r, "user_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -67,9 +67,9 @@ func (app *application) DeleteMemberHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch err {
 		case store.SqlNotfound:
-			app.NotFound(w, r)
+			app.notFoundError(w, r, err)
 		default:
-			app.InternalServerError(w, r, err)
+			app.internalServerError(w, r, err)
 		}
 		return
 	}

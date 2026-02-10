@@ -1,28 +1,51 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
-func (app *application) InternalServerError(w http.ResponseWriter, r *http.Request, err error) {
+func (app *application) internalServerError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("internal server error",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
 
-	log.Printf("Internal server error: %v, request_id:%v, method:%v, path:%v", err, middleware.GetReqID(r.Context()), r.Method, r.URL.Path)
-
-	writeJSONError(w, http.StatusInternalServerError, "Server encountered an unexpected condition")
+	writeJSONError(w, http.StatusInternalServerError, "internal server error")
 }
 
-func (app *application) NotFound(w http.ResponseWriter, r *http.Request) {
+func (app *application) badRequestError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("bad request error",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
 
-	log.Printf("Not found: request_id:%v, method:%v, path:%v", middleware.GetReqID(r.Context()), r.Method, r.URL.Path)
-
-	writeJSONError(w, http.StatusNotFound, "The requested resource could not be found")
+	writeJSONError(w, http.StatusBadRequest, "bad request error")
 }
-func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err error) {
 
-	log.Printf("Bad request: %v, request_id:%v, method:%v, path:%v", err, middleware.GetReqID(r.Context()), r.Method, r.URL.Path)
+func (app *application) notFoundError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("not found error",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
 
-	writeJSONError(w, http.StatusBadRequest, "The request could not be understood or was missing required parameters")
+	writeJSONError(w, http.StatusNotFound, "not found error")
+}
+
+func (app *application) ConflictError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("conflict error",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
+
+	writeJSONError(w, http.StatusConflict, "Conflict error Cuncurrent")
 }

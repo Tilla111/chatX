@@ -7,6 +7,8 @@ import (
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
 	"log"
+
+	"go.uber.org/zap"
 )
 
 const Version = "v1.0.0"
@@ -51,6 +53,9 @@ func main() {
 		Upgrade: Upgrader,
 	}
 
+	logger := *zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
 	db, err := db.NewPostgres(
 		cfg.DB.Addr,
 		cfg.DB.Host,
@@ -62,9 +67,14 @@ func main() {
 		cfg.DB.MaxIdletime,
 	)
 	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
+		logger.Fatal("Error connecting to database",
+			zap.Error(err),
+		)
 	}
-	log.Println("Connected to database successfully")
+	logger.Infow("database connection status",
+		"status", "connected",
+		"host", cfg.DB.Addr,
+	)
 
 	hub := ws.NewHub()
 	go hub.Run()
@@ -77,13 +87,20 @@ func main() {
 		strore:   *storage,
 		services: *services,
 		ws:       hub,
+		logger:   logger,
 	}
 
 	handler := app.mount()
 
-	log.Println("Starting server on", cfg.Addr)
+	logger.Infow("Starting server",
+		"addr", cfg.Addr,
+		"env", cfg.ENV,
+	)
 	err = app.run(cfg.Addr, handler)
 	if err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		logger.Fatalw("Server failed to start",
+			"error", err,
+			"addr", cfg.Addr,
+		)
 	}
 }

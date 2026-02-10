@@ -25,7 +25,7 @@ import (
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "user_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -37,26 +37,26 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	qr, err := pg.Parse(r)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := Validate.Struct(qr); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	ctx := r.Context()
 	users, err := app.services.UserSrvc.GetUsers(ctx, id, qr)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	fmt.Println(users)
 
 	if err := app.jsonResponse(w, http.StatusOK, users); err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 }

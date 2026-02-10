@@ -31,12 +31,12 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 
 	var req ChatReq
 	if err := readJSON(w, r, &req); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	if err := Validate.Struct(req); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -46,16 +46,16 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			app.BadRequest(w, r, err)
+			app.badRequestError(w, r, err)
 		default:
-			app.InternalServerError(w, r, err)
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
 
 	err = writeJSON(w, http.StatusCreated, id)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 	}
 
 }
@@ -82,12 +82,12 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 
 	var req groupReq
 	if err := readJSON(w, r, &req); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	if err := Validate.Struct(req); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -104,16 +104,16 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
-			app.BadRequest(w, r, err)
+			app.badRequestError(w, r, err)
 		default:
-			app.InternalServerError(w, r, err)
+			app.badRequestError(w, r, err)
 		}
 		return
 	}
 
 	err = writeJSON(w, http.StatusCreated, id)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 	}
 
 }
@@ -139,7 +139,7 @@ func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Reque
 
 	chats, err := app.services.ChatSRVC.GetUserChats(ctx, userID, searchTerm)
 	if err != nil {
-		app.InternalServerError(w, r, err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -168,14 +168,14 @@ type group struct {
 func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	var g group
 
 	if err := readJSON(w, r, &g); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -186,7 +186,7 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := Validate.Struct(group); err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -195,9 +195,9 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch err {
 		case store.SqlNotfound:
-			app.NotFound(w, r)
+			app.notFoundError(w, r, err)
 		default:
-			app.InternalServerError(w, r, err)
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
@@ -218,7 +218,7 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil {
-		app.BadRequest(w, r, err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -227,9 +227,9 @@ func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request
 	if err := app.services.ChatSRVC.DeleteChat(ctx, id); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
-			app.NotFound(w, r)
+			app.notFoundError(w, r, err)
 		default:
-			app.InternalServerError(w, r, err)
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
