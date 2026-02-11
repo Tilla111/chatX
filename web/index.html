@@ -18,7 +18,7 @@
     <header class="card topbar">
       <div class="brand">
         <h1>ChatX Workspace</h1>
-        <p>Barcha endpointlar bilan ishlovchi yagona front panel</p>
+        <p>Chatlar, guruhlar va xabarlarni bir joydan boshqarish oynasi</p>
       </div>
 
       <div class="status-strip">
@@ -45,9 +45,6 @@
           </div>
 
           <div class="action-grid">
-            <button id="newPrivateBtn" type="button" class="btn action">
-              <i class="fa-regular fa-message"></i> Private Chat
-            </button>
             <button id="newGroupBtn" type="button" class="btn action">
               <i class="fa-solid fa-user-group"></i> Group Chat
             </button>
@@ -144,6 +141,7 @@
           <span>A'zolar</span>
           <span id="groupMemberCount">0 ta tanlangan</span>
         </div>
+        <input id="groupMemberSearchInput" class="text-input" type="text" maxlength="10" placeholder="A'zo qidirish (username)">
         <div id="groupMemberChecklist" class="check-grid"></div>
 
         <button class="btn primary" type="submit">Group yaratish</button>
@@ -178,6 +176,11 @@
         <button class="icon-btn" type="button" data-close-modal="membersModal">
           <i class="fa-solid fa-xmark"></i>
         </button>
+      </div>
+      <div class="member-add-wrap">
+        <label for="memberSearchInput">A'zo qo'shish</label>
+        <input id="memberSearchInput" class="text-input" type="text" maxlength="10" placeholder="Username yozing">
+        <ul id="memberSearchList" class="list compact member-search-list"></ul>
       </div>
       <ul id="membersList" class="list compact"></ul>
     </div>

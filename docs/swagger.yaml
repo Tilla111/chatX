@@ -1,5 +1,12 @@
 basePath: /api/v1
 definitions:
+  main.addMemberRequest:
+    properties:
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
   main.createGroupRequest:
     properties:
       description:
@@ -452,6 +459,69 @@ paths:
               type: string
             type: object
       summary: Chat a'zolarini olish
+      tags:
+      - members
+    post:
+      consumes:
+      - application/json
+      description: Group chatga yangi a'zo qo'shadi. Amalni faqat owner yoki admin
+        bajarishi mumkin.
+      parameters:
+      - description: Amalni bajarayotgan foydalanuvchi IDsi
+        in: header
+        name: X-User-ID
+        required: true
+        type: integer
+      - description: Group chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      - description: Qo'shiladigan user ID
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.addMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: '{"data":{"result":"added","user_id":21}}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Path param yoki body noto'g'ri
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: X-User-ID yuborilmagan yoki noto'g'ri
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Ruxsat yo'q
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Chat topilmadi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ichki server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Groupga a'zo qo'shish
       tags:
       - members
   /health:

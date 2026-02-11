@@ -14,6 +14,8 @@
   --radius-xl: 22px;
   --radius-lg: 16px;
   --radius-md: 12px;
+  --chat-item-h: 92px;
+  --user-item-h: 86px;
 }
 
 * {
@@ -23,6 +25,7 @@
 html,
 body {
   margin: 0;
+  height: 100%;
   min-height: 100%;
 }
 
@@ -62,10 +65,15 @@ body {
 
 .app-shell {
   max-width: 1450px;
+  height: 100dvh;
   margin: 0 auto;
   padding: 22px;
   position: relative;
   z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  overflow: hidden;
   animation: shell-in 0.45s ease;
 }
 
@@ -93,7 +101,6 @@ body {
   gap: 14px;
   grid-template-columns: 1.3fr 1fr 1.15fr;
   padding: 18px;
-  margin-bottom: 16px;
   align-items: center;
 }
 
@@ -156,21 +163,22 @@ body {
   display: grid;
   grid-template-columns: 355px 1fr;
   gap: 16px;
-  min-height: calc(100vh - 190px);
+  min-height: 0;
 }
 
 .sidebar,
 .chat-pane {
   display: grid;
   gap: 14px;
+  min-height: 0;
 }
 
 .sidebar {
-  grid-template-rows: auto minmax(260px, 1fr) minmax(210px, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .chat-pane {
-  grid-template-rows: auto minmax(300px, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .action-card,
@@ -179,6 +187,17 @@ body {
 .messages-wrap,
 .composer {
   padding: 14px;
+}
+
+.list-card,
+.messages-wrap {
+  min-height: 0;
+}
+
+.list-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .section-head {
@@ -288,13 +307,30 @@ body {
   margin: 10px 0 0;
   padding: 0;
   display: grid;
+  flex: 1;
+  min-height: 0;
   gap: 8px;
-  max-height: 100%;
   overflow: auto;
 }
 
 .list.compact {
   gap: 6px;
+}
+
+#chatList {
+  max-height: calc((var(--chat-item-h) * 6) + (8px * 5));
+}
+
+#chatList .chat-item {
+  min-height: var(--chat-item-h);
+}
+
+#userList {
+  max-height: calc((var(--user-item-h) * 3) + (6px * 2));
+}
+
+#userList .list-item {
+  min-height: var(--user-item-h);
 }
 
 .list-item {
@@ -408,7 +444,8 @@ body {
 }
 
 .messages-wrap {
-  min-height: 300px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -416,7 +453,8 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -456,12 +494,28 @@ body {
 .message-time {
   color: #7f8ba4;
   font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .message-body {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.message-status {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.message-status.sent {
+  color: #89a0c2;
+}
+
+.message-status.read {
+  color: #1f8f7b;
 }
 
 .message-tools {
@@ -605,6 +659,22 @@ body {
   align-items: center;
 }
 
+.member-add-wrap {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.member-add-wrap label {
+  font-weight: 700;
+  color: #3f4f70;
+}
+
+.member-search-list {
+  margin-top: 0;
+  max-height: 180px;
+}
+
 .toast-stack {
   position: fixed;
   right: 18px;
@@ -649,12 +719,19 @@ body {
 }
 
 @media (max-width: 1180px) {
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
   .topbar {
     grid-template-columns: 1fr;
   }
 
   .layout {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .sidebar {

@@ -54,6 +54,7 @@ type MessageDetail struct {
 	SenderID   int64  `json:"sender_id"`
 	SenderName string `json:"sender_name"`
 	CreatedAt  string `json:"created_at"`
+	IsRead     bool   `json:"is_read"`
 }
 
 func (s *MessageSRV) GetByID(ctx context.Context, id int64) (*Message, error) {
@@ -89,6 +90,7 @@ func (s *MessageSRV) GetByChatID(ctx context.Context, chatID int64) ([]MessageDe
 			SenderID:   msg.SenderID,
 			SenderName: msg.SenderName,
 			CreatedAt:  msg.CreatedAt,
+			IsRead:     msg.IsRead,
 		}
 
 		messags = append(messags, mes)

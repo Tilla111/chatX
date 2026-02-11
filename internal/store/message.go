@@ -74,6 +74,7 @@ type MessageDetail struct {
 	SenderID   int64
 	SenderName string
 	CreatedAt  string
+	IsRead     bool
 }
 
 func (s *MessageStorage) GetByID(ctx context.Context, id int64) (*Message, error) {
@@ -101,7 +102,17 @@ func (s *MessageStorage) GetByID(ctx context.Context, id int64) (*Message, error
 
 func (s *MessageStorage) GetMessages(ctx context.Context, chatID int64) ([]MessageDetail, error) {
 	query := `
-        SELECT m.id, m.message_text, m.sender_id, u.username as sender_name, m.created_at
+        SELECT m.id,
+               m.message_text,
+               m.sender_id,
+               u.username as sender_name,
+               m.created_at,
+               EXISTS (
+                   SELECT 1
+                   FROM message_reads mr
+                   WHERE mr.message_id = m.id
+                     AND mr.user_id <> m.sender_id
+               ) AS is_read
         FROM messages m
         JOIN users u ON m.sender_id = u.id
         WHERE m.chat_id = $1
@@ -116,7 +127,7 @@ func (s *MessageStorage) GetMessages(ctx context.Context, chatID int64) ([]Messa
 	var messages []MessageDetail
 	for rows.Next() {
 		var msg MessageDetail
-		if err := rows.Scan(&msg.ID, &msg.Content, &msg.SenderID, &msg.SenderName, &msg.CreatedAt); err != nil {
+		if err := rows.Scan(&msg.ID, &msg.Content, &msg.SenderID, &msg.SenderName, &msg.CreatedAt, &msg.IsRead); err != nil {
 			return nil, err
 		}
 		messages = append(messages, msg)

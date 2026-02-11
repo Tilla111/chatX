@@ -83,6 +83,7 @@ func (app *application) mount() *chi.Mux {
 		r.Route("/groups", func(r chi.Router) {
 			r.Post("/", app.CreateGroupHandler)
 			r.Patch("/{chat_id}", app.UpdateChatHandler)
+			r.Post("/{chat_id}/members", app.AddMemberHandler)
 			r.Get("/{chat_id}/members", app.GetMembersHandler)
 			r.Delete("/{chat_id}/{user_id}/member", app.DeleteMemberHandler)
 		})

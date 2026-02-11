@@ -5,9 +5,12 @@ const state = {
   currentUserId: null,
   chats: [],
   users: [],
+  groupMemberPool: [],
+  groupSelectedMemberIds: new Set(),
   selectedChatId: null,
   messages: [],
   members: [],
+  memberCandidates: [],
   ws: null,
   wsTimer: null,
   manualWsClose: false,
@@ -52,6 +55,7 @@ const els = {
   groupForm: document.getElementById("groupForm"),
   groupNameInput: document.getElementById("groupNameInput"),
   groupDescInput: document.getElementById("groupDescInput"),
+  groupMemberSearchInput: document.getElementById("groupMemberSearchInput"),
   groupMemberChecklist: document.getElementById("groupMemberChecklist"),
   groupMemberCount: document.getElementById("groupMemberCount"),
 
@@ -61,6 +65,8 @@ const els = {
   editGroupDescInput: document.getElementById("editGroupDescInput"),
 
   membersModal: document.getElementById("membersModal"),
+  memberSearchInput: document.getElementById("memberSearchInput"),
+  memberSearchList: document.getElementById("memberSearchList"),
   membersList: document.getElementById("membersList"),
 
   toastStack: document.getElementById("toastStack"),
@@ -100,8 +106,17 @@ function bindEvents() {
   els.userSearchInput.addEventListener("input", debounce(() => {
     refreshUsers();
   }, 260));
+  els.groupMemberSearchInput.addEventListener("input", debounce(() => {
+    loadGroupMemberPool(els.groupMemberSearchInput.value.trim()).catch((error) => {
+      toast(error.message, "error");
+    });
+  }, 260));
+  els.memberSearchInput.addEventListener("input", debounce(() => {
+    loadMemberCandidates(els.memberSearchInput.value.trim()).catch((error) => {
+      toast(error.message, "error");
+    });
+  }, 260));
 
-  els.newPrivateBtn.addEventListener("click", () => openPrivateModal());
   els.newGroupBtn.addEventListener("click", () => openGroupModal());
   els.membersBtn.addEventListener("click", () => openMembersModal());
   els.editGroupBtn.addEventListener("click", () => openEditGroupModal());
@@ -152,6 +167,13 @@ function bindEvents() {
     if (!userId) return;
     await removeMember(userId);
   });
+  els.memberSearchList.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-action='add-member']");
+    if (!button) return;
+    const userId = Number(button.dataset.userId);
+    if (!userId) return;
+    await addMember(userId);
+  });
 
   document.querySelectorAll("[data-close-modal]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -187,8 +209,11 @@ function disconnectSession() {
   state.currentUserId = null;
   state.chats = [];
   state.users = [];
+  state.groupMemberPool = [];
+  state.groupSelectedMemberIds = new Set();
   state.messages = [];
   state.members = [];
+  state.memberCandidates = [];
   state.selectedChatId = null;
 
   if (state.wsTimer) {
@@ -459,13 +484,22 @@ function openPrivateModal() {
   openModal("privateModal");
 }
 
-function openGroupModal() {
+async function openGroupModal() {
   if (!ensureSession()) return;
 
   els.groupNameInput.value = "";
   els.groupDescInput.value = "";
-  renderGroupMemberChecklist();
+  els.groupMemberSearchInput.value = "";
+  state.groupSelectedMemberIds = new Set();
+  state.groupMemberPool = [];
+  els.groupMemberChecklist.innerHTML = `<div class="empty">A'zolar yuklanmoqda...</div>`;
+  updateGroupMemberCount();
   openModal("groupModal");
+  try {
+    await loadGroupMemberPool("");
+  } catch (error) {
+    toast(error.message, "error");
+  }
 }
 
 async function submitGroupChat(event) {
@@ -586,11 +620,37 @@ async function openMembersModal() {
     return;
   }
 
+  state.memberCandidates = [];
+  els.memberSearchInput.value = "";
+  renderMemberCandidateList();
+
   try {
     const response = await apiRequest(`/groups/${chat.chatId}/members`);
     state.members = asArray(response).map(normalizeUser).filter((user) => user.id > 0);
     renderMembersList();
     openModal("membersModal");
+    await loadMemberCandidates("");
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+async function addMember(userId) {
+  const chat = getSelectedChat();
+  if (!chat) return;
+  if (chat.chatType !== "group") {
+    toast("A'zo qo'shish faqat group chat uchun.", "error");
+    return;
+  }
+
+  try {
+    await apiRequest(`/groups/${chat.chatId}/members`, {
+      method: "POST",
+      body: { user_id: userId },
+    });
+    toast("A'zo groupga qo'shildi.", "ok");
+    await openMembersModal();
+    await refreshChats();
   } catch (error) {
     toast(error.message, "error");
   }
@@ -681,6 +741,7 @@ async function handleSocketEvent(payload) {
       senderName: payload.sender_name || `User #${senderId}`,
       content: payload.content || "",
       createdAt: payload.created_at || new Date().toISOString(),
+      isRead: false,
     };
 
     if (chatId === state.selectedChatId) {
@@ -728,8 +789,45 @@ async function handleSocketEvent(payload) {
     const readerId = Number(payload.reader_id);
     if (chatId !== state.selectedChatId) return;
     if (readerId === state.currentUserId) return;
+
+    let hasUpdates = false;
+    state.messages.forEach((message) => {
+      if (message.senderId === state.currentUserId && !message.isRead) {
+        message.isRead = true;
+        hasUpdates = true;
+      }
+    });
+    if (hasUpdates) {
+      renderMessages(false);
+    }
     toast(`User #${readerId} xabarlarni o'qidi.`, "info");
   }
+}
+
+async function loadMemberCandidates(searchTerm) {
+  const chat = getSelectedChat();
+  if (!chat || chat.chatType !== "group") {
+    state.memberCandidates = [];
+    renderMemberCandidateList();
+    return;
+  }
+
+  const query = new URLSearchParams();
+  query.set("limit", "20");
+  query.set("offset", "0");
+
+  const term = sanitizeUserSearch(searchTerm);
+  if (term) {
+    query.set("search", term);
+  }
+
+  const users = await apiRequest(`/users?${query.toString()}`);
+  const memberIDs = new Set(state.members.map((member) => member.id));
+  state.memberCandidates = asArray(users)
+    .map(normalizeUser)
+    .filter((user) => user.id > 0 && !memberIDs.has(user.id));
+
+  renderMemberCandidateList();
 }
 
 async function apiRequest(path, options = {}) {
@@ -896,7 +994,10 @@ function renderMessages(shouldScroll = true) {
     item.innerHTML = `
       <div class="message-head">
         <span class="message-author">${escapeHTML(message.senderName || `User #${message.senderId}`)}</span>
-        <span class="message-time">${formatDate(message.createdAt)}</span>
+        <span class="message-time">
+          ${formatDate(message.createdAt)}
+          ${mine ? renderMessageStatus(message) : ""}
+        </span>
       </div>
       <p class="message-body">${escapeHTML(message.content)}</p>
       ${mine ? `
@@ -960,22 +1061,49 @@ function renderMembersList() {
   els.membersList.appendChild(fragment);
 }
 
-function renderGroupMemberChecklist() {
-  els.groupMemberChecklist.innerHTML = "";
+function renderMemberCandidateList() {
+  els.memberSearchList.innerHTML = "";
 
-  const users = state.users.filter((user) => user.id !== state.currentUserId);
-  if (!users.length) {
-    els.groupMemberChecklist.innerHTML = `<div class="empty">Tanlash uchun user yo'q.</div>`;
-    els.groupMemberCount.textContent = "0 ta tanlangan";
+  if (!state.memberCandidates.length) {
+    els.memberSearchList.innerHTML = `<li class="empty">Qo'shish uchun user topilmadi.</li>`;
     return;
   }
 
   const fragment = document.createDocumentFragment();
-  users.forEach((user) => {
+  state.memberCandidates.forEach((user) => {
+    const item = document.createElement("li");
+    item.className = "list-item member-row";
+    item.innerHTML = `
+      <div>
+        <strong>${escapeHTML(user.username)}</strong>
+        <div class="chat-time">#${user.id} ${escapeHTML(user.email || "")}</div>
+      </div>
+      <button type="button" class="btn mini" data-action="add-member" data-user-id="${user.id}">
+        Qo'shish
+      </button>
+    `;
+    fragment.appendChild(item);
+  });
+
+  els.memberSearchList.appendChild(fragment);
+}
+
+function renderGroupMemberChecklist() {
+  els.groupMemberChecklist.innerHTML = "";
+
+  if (!state.groupMemberPool.length) {
+    els.groupMemberChecklist.innerHTML = `<div class="empty">Tanlash uchun user yo'q.</div>`;
+    updateGroupMemberCount();
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  state.groupMemberPool.forEach((user) => {
+    const checked = state.groupSelectedMemberIds.has(user.id);
     const label = document.createElement("label");
     label.className = "check-item";
     label.innerHTML = `
-      <input type="checkbox" value="${user.id}" class="group-member-check">
+      <input type="checkbox" value="${user.id}" class="group-member-check" ${checked ? "checked" : ""}>
       <span>${escapeHTML(user.username)} (#${user.id})</span>
     `;
     fragment.appendChild(label);
@@ -984,17 +1112,47 @@ function renderGroupMemberChecklist() {
 
   els.groupMemberChecklist.querySelectorAll(".group-member-check").forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
-      const selected = getSelectedGroupMembers().length;
-      els.groupMemberCount.textContent = `${selected} ta tanlangan`;
+      const userId = Number(checkbox.value);
+      if (!userId) return;
+
+      if (checkbox.checked) {
+        state.groupSelectedMemberIds.add(userId);
+      } else {
+        state.groupSelectedMemberIds.delete(userId);
+      }
+      updateGroupMemberCount();
     });
   });
-  els.groupMemberCount.textContent = "0 ta tanlangan";
+  updateGroupMemberCount();
 }
 
 function getSelectedGroupMembers() {
-  return Array.from(els.groupMemberChecklist.querySelectorAll(".group-member-check:checked"))
-    .map((checkbox) => Number(checkbox.value))
+  return Array.from(state.groupSelectedMemberIds.values())
     .filter((value) => Number.isInteger(value) && value > 0);
+}
+
+function updateGroupMemberCount() {
+  els.groupMemberCount.textContent = `${state.groupSelectedMemberIds.size} ta tanlangan`;
+}
+
+async function loadGroupMemberPool(searchTerm) {
+  if (!state.currentUserId) return;
+
+  const query = new URLSearchParams();
+  query.set("limit", "20");
+  query.set("offset", "0");
+
+  const term = sanitizeUserSearch(searchTerm);
+  if (term) {
+    query.set("search", term);
+  }
+
+  const data = await apiRequest(`/users?${query.toString()}`);
+  state.groupMemberPool = asArray(data)
+    .map(normalizeUser)
+    .filter((user) => user.id > 0 && user.id !== state.currentUserId);
+
+  renderGroupMemberChecklist();
 }
 
 function renderEmptyLists() {
@@ -1056,7 +1214,13 @@ function normalizeMessage(raw, fallbackChatId) {
     senderName: String(raw.sender_name ?? raw.senderName ?? raw.SenderName ?? `User #${raw.sender_id || "?"}`),
     content: String(raw.content ?? raw.message_text ?? raw.messageText ?? raw.MessageText ?? ""),
     createdAt: raw.created_at ?? raw.createdAt ?? raw.CreatedAt ?? new Date().toISOString(),
+    isRead: Boolean(raw.is_read ?? raw.isRead ?? raw.IsRead ?? false),
   };
+}
+
+function renderMessageStatus(message) {
+  const read = Boolean(message?.isRead);
+  return `<span class="message-status ${read ? "read" : "sent"}" title="${read ? "O'qilgan" : "Yuborilgan"}">${read ? "&#10003;&#10003;" : "&#10003;"}</span>`;
 }
 
 function formatDate(raw) {
@@ -1108,4 +1272,8 @@ function clip(value, maxLen) {
   const text = String(value || "");
   if (text.length <= maxLen) return text;
   return `${text.slice(0, maxLen)}...`;
+}
+
+function sanitizeUserSearch(value) {
+  return String(value || "").trim().slice(0, 10);
 }
