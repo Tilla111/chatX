@@ -27,7 +27,8 @@ type Services struct {
 
 	MemberSRV interface {
 		GetByChatID(ctx context.Context, chatID int) ([]store.User, error)
-		Delete(ctx context.Context, chatID, userID int) error
+		IsMember(ctx context.Context, chatID int64, userID int64) (bool, error)
+		Delete(ctx context.Context, actorUserID int64, chatID int, userID int) error
 	}
 
 	MessageSRV interface {

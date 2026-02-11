@@ -2,30 +2,26 @@ package main
 
 import (
 	"chatX/internal/store"
-	"fmt"
 	"net/http"
-	"strconv"
-
-	"github.com/go-chi/chi"
 )
 
 // GetUserHandler godoc
-// @Summary      Foydalanuvchilar ro'yxatini olish
-// @Description  Tizimdagi foydalanuvchilarni qidirish va sahifalangan ro'yxatini qaytaradi.
+// @Summary      Foydalanuvchilar ro'yxati
+// @Description  Joriy userdan tashqari userlarni pagination va search bilan qaytaradi.
 // @Tags         users
 // @Produce      json
-// @Param        user_id  path      int     true   "So'rov yuborayotgan foydalanuvchi IDsi"
-// @Param        limit    query     int     false  "Natijalar soni" default(20)
-// @Param        offset   query     int     false  "Surilish (offset)" default(0)
-// @Param        search   query     string  false  "Qidiruv matni (ism yoki login)"
-// @Success      200      {object}  map[string][]service.User "Foydalanuvchilar: {"data": [User ob'ektlari]}"
-// @Failure      400      {object}  map[string]string
-// @Failure      500      {object}  map[string]string
-// @Router       /users/{user_id} [get]
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        limit      query     int                false  "Sahifadagi element soni (1..20)" default(20)
+// @Param        offset     query     int                false  "Qaysi elementdan boshlab olish" default(0)
+// @Param        search     query     string             false  "Username bo'yicha qidiruv (max 10 ta belgi)"
+// @Success      200        {object}  map[string]any     "{"data":[...foydalanuvchilar...]}"
+// @Failure      400        {object}  map[string]string  "Query param noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
+// @Router       /users [get]
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		app.badRequestError(w, r, err)
+	currentUserID, ok := app.requireUserID(w, r)
+	if !ok {
 		return
 	}
 
@@ -35,28 +31,24 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		Search: "",
 	}
 
-	qr, err := pg.Parse(r)
+	query, err := pg.Parse(r)
 	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-
-	if err := Validate.Struct(qr); err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
-	ctx := r.Context()
-	users, err := app.services.UserSrvc.GetUsers(ctx, id, qr)
+	if err := Validate.Struct(query); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	users, err := app.services.UserSrvc.GetUsers(r.Context(), int(currentUserID), query)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	fmt.Println(users)
-
 	if err := app.jsonResponse(w, http.StatusOK, users); err != nil {
 		app.internalServerError(w, r, err)
-		return
 	}
 }

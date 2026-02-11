@@ -26,40 +26,39 @@ const docTemplate = `{
     "paths": {
         "/chats": {
             "get": {
-                "description": "Tizimga kirgan foydalanuvchining barcha shaxsiy va guruh suhbatlarini qaytaradi.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini qaytaradi.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "chats"
                 ],
-                "summary": "Foydalanuvchi chatlarini ro'yxatini olish",
+                "summary": "Joriy user chatlari",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "string",
-                        "description": "Chat nomi yoki oxirgi xabar bo'yicha qidirish",
+                        "description": "Chat nomi bo'yicha qidiruv",
                         "name": "search",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chatlar ro'yxati muvaffaqiyatli qaytarildi",
+                        "description": "{\"data\":[...chatlar...]}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/service.ChatInfo"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
-                        "description": "Avtorizatsiyadan o'tilmagan",
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -68,7 +67,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Serverning ichki xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -79,7 +78,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Yangi guruh yaratadi va foydalanuvchilarni unga qo'shadi",
+                "description": "Ikki foydalanuvchi orasida private chat yaratadi. Agar chat oldin yaratilgan bo'lsa, o'sha chat_id qaytadi.",
                 "consumes": [
                     "application/json"
                 ],
@@ -89,43 +88,66 @@ const docTemplate = `{
                 "tags": [
                     "chats"
                 ],
-                "summary": "Guruh suhbatini yaratish",
+                "summary": "Private chat yaratish",
                 "parameters": [
                     {
-                        "description": "Guruh ma'lumotlari",
+                        "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Private chat uchun receiver ma'lumoti",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.groupReq"
+                            "$ref": "#/definitions/main.createPrivateChatRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Guruh IDsi qaytadi",
+                        "description": "{\"data\":{\"chat_id\":12}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "integer",
-                                "format": "int64"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri so'rov yuborilgan",
-                        "schema": {}
+                        "description": "So'rov noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Server xatoligi",
-                        "schema": {}
+                        "description": "Ichki server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         },
         "/chats/{chat_id}": {
             "delete": {
-                "description": "Berilgan ID bo'yicha chatni (shaxsiy yoki guruh) butunlay o'chirib tashlaydi.",
+                "description": "Berilgan ` + "`" + `chat_id` + "`" + ` bo'yicha chatni o'chiradi.",
                 "tags": [
                     "chats"
                 ],
@@ -133,7 +155,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "O'chirilishi kerak bo'lgan chat IDsi",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Chat ID",
                         "name": "chat_id",
                         "in": "path",
                         "required": true
@@ -141,10 +170,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Muvaffaqiyatli o'chirildi (kontent qaytarilmaydi)"
+                        "description": "Muvaffaqiyatli o'chirildi"
                     },
                     "400": {
-                        "description": "Noto'g'ri ID formati",
+                        "description": "chat_id noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -162,7 +200,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Serverning ichki xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -175,7 +213,7 @@ const docTemplate = `{
         },
         "/chats/{chat_id}/messages": {
             "get": {
-                "description": "Berilgan chat_id bo'yicha barcha xabarlar tarixini qaytaradi.",
+                "description": "Berilgan chatdagi xabarlar tarixini qaytaradi. Faqat chat a'zosi ko'ra oladi.",
                 "produces": [
                     "application/json"
                 ],
@@ -186,6 +224,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
                         "description": "Chat ID",
                         "name": "chat_id",
                         "in": "path",
@@ -194,19 +239,32 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Xabarlar ro'yxati: {\"data\": [MessageDetail ob'ektlari]}",
+                        "description": "{\"data\":[...xabarlar...]}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/service.MessageDetail"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri ID",
+                        "description": "chat_id noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User chat a'zosi emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -215,64 +273,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/chats/{chat_id}/{user_id}/member": {
-            "delete": {
-                "description": "Guruh suhbatidan foydalanuvchini olib tashlaydi. Faqat guruh admini yoki foydalanuvchining o'zi (chiqib ketish) bajara oladi.",
-                "tags": [
-                    "members"
-                ],
-                "summary": "Guruhdan a'zoni o'chirish",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Chat (guruh) IDsi",
-                        "name": "chat_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "O'chirilishi kerak bo'lgan foydalanuvchi IDsi",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Muvaffaqiyatli o'chirildi"
-                    },
-                    "400": {
-                        "description": "ID xato yuborilgan",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "A'zo yoki chat topilmadi",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -285,7 +286,7 @@ const docTemplate = `{
         },
         "/groups": {
             "post": {
-                "description": "Yangi guruh chatini yaratadi va a'zolarni biriktiradi",
+                "description": "Yangi group chat yaratadi, joriy userni owner qiladi va ` + "`" + `member_ids` + "`" + ` dagi userlarni qo'shadi.",
                 "consumes": [
                     "application/json"
                 ],
@@ -295,28 +296,44 @@ const docTemplate = `{
                 "tags": [
                     "groups"
                 ],
-                "summary": "Guruh suhbatini yaratish",
+                "summary": "Group chat yaratish",
                 "parameters": [
                     {
-                        "description": "Guruh yaratish ma'lumotlari",
+                        "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi (owner bo'ladi)",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Group yaratish ma'lumotlari",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.groupReq"
+                            "$ref": "#/definitions/main.createGroupRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Guruh muvaffaqiyatli yaratildi",
+                        "description": "{\"data\":{\"chat_id\":17}}",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri so'rov yoki validatsiya xatosi",
+                        "description": "So'rov noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -325,7 +342,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server ichki xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -337,8 +354,8 @@ const docTemplate = `{
             }
         },
         "/groups/{chat_id}": {
-            "put": {
-                "description": "Mavjud guruhning nomi va tavsifini o'zgartiradi. Chat ID path orqali yuboriladi.",
+            "patch": {
+                "description": "Berilgan ` + "`" + `chat_id` + "`" + ` bo'yicha group nomi va description qiymatlarini yangilaydi.",
                 "consumes": [
                     "application/json"
                 ],
@@ -348,34 +365,51 @@ const docTemplate = `{
                 "tags": [
                     "groups"
                 ],
-                "summary": "Guruh ma'lumotlarini yangilash",
+                "summary": "Group ma'lumotlarini yangilash",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Yangilanadigan chat (guruh) IDsi",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Group chat ID",
                         "name": "chat_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Yangi guruh ma'lumotlari",
-                        "name": "request_body",
+                        "description": "Yangilanadigan qiymatlar",
+                        "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.group"
+                            "$ref": "#/definitions/main.updateGroupRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Muvaffaqiyatli yangilandi",
+                        "description": "{\"data\":{\"result\":\"updated\"}}",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri ID yoki validatsiya xatosi",
+                        "description": "ID yoki body noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -384,7 +418,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Guruh topilmadi",
+                        "description": "Group topilmadi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -393,7 +427,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -406,18 +440,25 @@ const docTemplate = `{
         },
         "/groups/{chat_id}/members": {
             "get": {
-                "description": "Chat ID bo'yicha barcha a'zolar (foydalanuvchilar) ro'yxatini qaytaradi",
+                "description": "Berilgan group chat uchun a'zolar ro'yxatini qaytaradi. Faqat chat a'zosi ko'ra oladi.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "members"
                 ],
-                "summary": "Guruh a'zolarini olish",
+                "summary": "Chat a'zolarini olish",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Chat ID",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Group chat ID",
                         "name": "chat_id",
                         "in": "path",
                         "required": true
@@ -425,19 +466,32 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Muvaffaqiyatli: {\"data\": [User ob'ektlari]}",
+                        "description": "{\"data\":[...a'zolar...]}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/store.User"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "chat_id noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User chat a'zosi emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -446,7 +500,89 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Ichki server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/{chat_id}/{user_id}/member": {
+            "delete": {
+                "description": "Groupdan userni chiqaradi. O'zini chiqarish mumkin, boshqa userni esa owner/admin chiqara oladi.",
+                "tags": [
+                    "members"
+                ],
+                "summary": "A'zoni groupdan chiqarish",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Amalni bajarayotgan foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Group chat ID",
+                        "name": "chat_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Chiqariladigan user ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Muvaffaqiyatli chiqarildi"
+                    },
+                    "400": {
+                        "description": "Path param noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Ruxsat yo'q",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Member yoki chat topilmadi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -459,7 +595,7 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
-                "description": "Serverning ishchi holati va versiyasini qaytaradi.",
+                "description": "API ishlayotganini tekshirish uchun texnik endpoint.",
                 "produces": [
                     "application/json"
                 ],
@@ -469,19 +605,16 @@ const docTemplate = `{
                 "summary": "API holatini tekshirish",
                 "responses": {
                     "200": {
-                        "description": "Masalan: {\"data\": {\"status\": \"available\", \"version\": \"1.0.0\"}}",
+                        "description": "{\"status\":\"available\",\"version\":\"v1.0.0\",\"message\":\"Welcome to ChatX API\",\"ENV\":\"dev\"}",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
+                                "type": "string"
                             }
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -494,7 +627,7 @@ const docTemplate = `{
         },
         "/messages": {
             "post": {
-                "description": "Yangi xabar yaratadi va uni guruh a'zolariga WebSocket orqali real-vaqtda tarqatadi.",
+                "description": "Joriy foydalanuvchi berilgan chatga yangi xabar yuboradi.",
                 "consumes": [
                     "application/json"
                 ],
@@ -507,27 +640,50 @@ const docTemplate = `{
                 "summary": "Xabar yuborish",
                 "parameters": [
                     {
-                        "description": "Xabar ma'lumotlari",
+                        "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Xabar yuborish ma'lumotlari",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.Message"
+                            "$ref": "#/definitions/main.createMessageRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Xabar yaratildi: {\"data\": {message_object}}",
+                        "description": "{\"data\":{...xabar...}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "$ref": "#/definitions/service.Message"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri JSON formati",
+                        "description": "Body noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User chat a'zosi emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -536,7 +692,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -547,17 +703,24 @@ const docTemplate = `{
                 }
             }
         },
-        "/messages/{chat_id}": {
+        "/messages/chats/{chat_id}/read": {
             "patch": {
-                "description": "Chatdagi barcha xabarlarni joriy foydalanuvchi uchun o'qilgan holatiga o'tkazadi va bu haqda boshqa a'zolarga xabar beradi.",
+                "description": "Joriy foydalanuvchi uchun berilgan chatdagi barcha kiruvchi xabarlarni o'qilgan holatiga o'tkazadi.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "messages"
                 ],
-                "summary": "Xabarlarni o'qilgan deb belgilash",
+                "summary": "Chatdagi xabarlarni o'qilgan deb belgilash",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "integer",
                         "description": "Chat ID",
@@ -568,19 +731,32 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Muvaffaqiyatli: {\"data\": {\"status\": \"success\"}}",
+                        "description": "{\"data\":{\"status\":\"success\"}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri ID format",
+                        "description": "chat_id noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User chat a'zosi emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -589,7 +765,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -602,7 +778,7 @@ const docTemplate = `{
         },
         "/messages/{id}": {
             "delete": {
-                "description": "Xabarni ma'lumotlar bazasidan o'chiradi va WebSocket orqali barcha chat a'zolariga xabar o'chirilganligi haqida signal yuboradi.",
+                "description": "Joriy foydalanuvchi o'zi yuborgan xabarni o'chiradi.",
                 "produces": [
                     "application/json"
                 ],
@@ -613,7 +789,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "O'chirilishi kerak bo'lgan xabar IDsi",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Xabar ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -621,19 +804,23 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Muvaffaqiyatli: {\"data\": {\"result\": \"deleted\"}}",
+                        "description": "{\"data\":{\"result\":\"deleted\"}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri ID format",
+                        "description": "ID noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -642,7 +829,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Xabar topilmadi",
+                        "description": "Xabar topilmadi yoki userga tegishli emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -651,7 +838,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -662,7 +849,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Yuborilgan xabar matnini o'zgartiradi va bu haqda guruh a'zolariga WebSocket orqali xabar beradi.",
+                "description": "Joriy foydalanuvchi o'zi yuborgan xabar matnini yangilaydi.",
                 "consumes": [
                     "application/json"
                 ],
@@ -676,36 +863,56 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Xabar IDsi",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Xabar ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Tahrirlash ma'lumotlari (message_text va chat_id)",
+                        "description": "Yangilangan xabar matni",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/main.updateMessageRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Muvaffaqiyatli: {\"data\": {\"result\": \"updated\"}}",
+                        "description": "{\"data\":{\"result\":\"updated\"}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Noto'g'ri JSON yoki ID",
+                        "description": "ID yoki body noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Xabar topilmadi yoki userga tegishli emas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -714,7 +921,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Server xatosi",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -725,60 +932,64 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{user_id}": {
+        "/users": {
             "get": {
-                "description": "Tizimdagi foydalanuvchilarni qidirish va sahifalangan ro'yxatini qaytaradi.",
+                "description": "Joriy userdan tashqari userlarni pagination va search bilan qaytaradi.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "Foydalanuvchilar ro'yxatini olish",
+                "summary": "Foydalanuvchilar ro'yxati",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "So'rov yuborayotgan foydalanuvchi IDsi",
-                        "name": "user_id",
-                        "in": "path",
+                        "description": "Joriy foydalanuvchi IDsi",
+                        "name": "X-User-ID",
+                        "in": "header",
                         "required": true
                     },
                     {
                         "type": "integer",
                         "default": 20,
-                        "description": "Natijalar soni",
+                        "description": "Sahifadagi element soni (1..20)",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "default": 0,
-                        "description": "Surilish (offset)",
+                        "description": "Qaysi elementdan boshlab olish",
                         "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Qidiruv matni (ism yoki login)",
+                        "description": "Username bo'yicha qidiruv (max 10 ta belgi)",
                         "name": "search",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Foydalanuvchilar: {\"data\": [User ob'ektlari]}",
+                        "description": "{\"data\":[...foydalanuvchilar...]}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/service.User"
-                                }
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Query param noto'g'ri",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -787,7 +998,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Ichki server xatosi",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -800,10 +1011,10 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.group": {
+        "main.createGroupRequest": {
             "type": "object",
             "required": [
-                "description",
+                "member_ids",
                 "name"
             ],
             "properties": {
@@ -811,8 +1022,12 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255
                 },
-                "id": {
-                    "type": "integer"
+                "member_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "name": {
                     "type": "string",
@@ -820,13 +1035,37 @@ const docTemplate = `{
                 }
             }
         },
-        "main.groupReq": {
+        "main.createMessageRequest": {
             "type": "object",
             "required": [
-                "description",
-                "name",
-                "receiver1_id",
-                "sender_id"
+                "chat_id",
+                "message_text"
+            ],
+            "properties": {
+                "chat_id": {
+                    "type": "integer"
+                },
+                "message_text": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            }
+        },
+        "main.createPrivateChatRequest": {
+            "type": "object",
+            "required": [
+                "receiver_id"
+            ],
+            "properties": {
+                "receiver_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.updateGroupRequest": {
+            "type": "object",
+            "required": [
+                "name"
             ],
             "properties": {
                 "description": {
@@ -836,141 +1075,27 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 255
-                },
-                "receiver1_id": {
-                    "type": "array",
-                    "maxItems": 255,
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "sender_id": {
-                    "type": "integer",
-                    "maximum": 255
                 }
             }
         },
-        "service.ChatInfo": {
+        "main.updateMessageRequest": {
             "type": "object",
+            "required": [
+                "message_text"
+            ],
             "properties": {
-                "chat_id": {
-                    "type": "integer"
-                },
-                "chat_name": {
-                    "type": "string"
-                },
-                "chat_type": {
-                    "type": "string"
-                },
-                "joined_at": {
-                    "type": "string"
-                },
-                "last_message": {
-                    "type": "string"
-                },
-                "last_message_at": {
-                    "type": "string"
-                },
-                "unread_count": {
-                    "description": "Yangi qo'shildi",
-                    "type": "integer"
-                },
-                "user_role": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.Message": {
-            "type": "object",
-            "properties": {
-                "chat_id": {
-                    "type": "integer"
-                },
-                "chat_name": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_read": {
-                    "type": "boolean"
-                },
                 "message_text": {
-                    "type": "string"
-                },
-                "sender_id": {
-                    "type": "integer"
-                },
-                "sender_name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.MessageDetail": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "sender_id": {
-                    "type": "integer"
-                },
-                "sender_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.User": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "store.User": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 4000
                 }
             }
         }
     },
     "securityDefinitions": {
         "ApiKeyAuth": {
+            "description": "Joriy foydalanuvchi IDsi (demo auth uchun)",
             "type": "apiKey",
-            "name": "Authorization",
+            "name": "X-User-ID",
             "in": "header"
         }
     }

@@ -1,10 +1,20 @@
 app:
   name: app-go
   env: dev
+  api_url: localhost:8080
+  allowed_origins:
+    - http://localhost:8080
+    - http://127.0.0.1:8080
 
 server:
+  port: "8080"
 
 database:
-  MAX_OPEN_CONNS: 9
-  MAX_IDLE_CONNS: 6
-  MAX_IDLE_TIME: 15m
+  addr: "5432"
+  host: localhost
+  user: admin
+  password: admin
+  name: chat_db
+  max_open_conns: 9
+  max_idle_conns: 6
+  max_idle_time: 15m

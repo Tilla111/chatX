@@ -9,7 +9,7 @@ type User struct {
 	ID        int64  `json:"id"`
 	UserName  string `json:"username"`
 	Email     string `json:"email"`
-	Password  string `json:"-"`
+	Password  []byte `json:"-"`
 	CreatedAt string `json:"created_at"`
 }
 
@@ -25,12 +25,12 @@ func (s *UserStore) CreateUser(ctx context.Context, user *User) error {
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
-		&user.UserName,
-		&user.Email,
-		&user.Password,
+		user.UserName,
+		user.Email,
+		user.Password,
 	).Scan(
 		&user.ID,
-		&user.ID,
+		&user.CreatedAt,
 	)
 	if err != nil {
 		return err

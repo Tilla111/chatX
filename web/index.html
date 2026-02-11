@@ -1,65 +1,190 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <title>Telegram Clone</title>
-    <link rel="stylesheet" href="./style/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatX Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="./style/style.css">
 </head>
 <body>
-  <div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="search-bar">
-                <i class="fas fa-bars"></i>
-                <input type="text" placeholder="Poisk">
-            </div>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <div class="app-shell">
+    <header class="card topbar">
+      <div class="brand">
+        <h1>ChatX Workspace</h1>
+        <p>Barcha endpointlar bilan ishlovchi yagona front panel</p>
+      </div>
+
+      <div class="status-strip">
+        <span id="healthBadge" class="pill neutral">Health: tekshirilmoqda...</span>
+        <span id="wsBadge" class="pill neutral">WS: uzilgan</span>
+      </div>
+
+      <div class="auth-controls">
+        <label for="userIdInput">X-User-ID</label>
+        <input id="userIdInput" type="number" min="1" step="1" placeholder="Masalan: 1">
+        <button id="connectBtn" type="button" class="btn primary">Ulanish</button>
+        <button id="disconnectBtn" type="button" class="btn ghost">Uzish</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <section class="card action-card">
+          <div class="section-head">
+            <h2>Amallar</h2>
+            <button id="refreshAllBtn" type="button" class="btn mini">
+              <i class="fa-solid fa-rotate"></i> Yangilash
+            </button>
+          </div>
+
+          <div class="action-grid">
+            <button id="newPrivateBtn" type="button" class="btn action">
+              <i class="fa-regular fa-message"></i> Private Chat
+            </button>
+            <button id="newGroupBtn" type="button" class="btn action">
+              <i class="fa-solid fa-user-group"></i> Group Chat
+            </button>
+          </div>
+        </section>
+
+        <section class="card list-card">
+          <div class="section-head">
+            <h2>Chatlar</h2>
+            <span id="chatCountBadge" class="count-badge">0</span>
+          </div>
+          <input id="chatSearchInput" class="text-input" type="text" placeholder="Chat qidirish...">
+          <ul id="chatList" class="list"></ul>
+        </section>
+
+        <section class="card list-card">
+          <div class="section-head">
+            <h2>Foydalanuvchilar</h2>
+          </div>
+          <input id="userSearchInput" class="text-input" type="text" placeholder="User qidirish...">
+          <ul id="userList" class="list compact"></ul>
+        </section>
+      </aside>
+
+      <main class="chat-pane">
+        <section id="chatMeta" class="card chat-meta">
+          <div class="chat-meta-main">
+            <h2 id="activeChatName">Chat tanlanmagan</h2>
+            <p id="activeChatInfo">Chap paneldan chat tanlang yoki yangi chat yarating.</p>
+          </div>
+
+          <div class="chat-tools">
+            <button id="membersBtn" type="button" class="btn mini" disabled>
+              <i class="fa-solid fa-users"></i> A'zolar
+            </button>
+            <button id="editGroupBtn" type="button" class="btn mini" disabled>
+              <i class="fa-solid fa-pen"></i> Groupni yangilash
+            </button>
+            <button id="markReadBtn" type="button" class="btn mini" disabled>
+              <i class="fa-solid fa-envelope-open-text"></i> Read
+            </button>
+            <button id="deleteChatBtn" type="button" class="btn mini danger" disabled>
+              <i class="fa-solid fa-trash"></i> Chatni o'chirish
+            </button>
+          </div>
+        </section>
+
+        <section id="messagesWrap" class="card messages-wrap">
+          <ul id="messagesList" class="messages-list"></ul>
+        </section>
+
+        <form id="composerForm" class="card composer">
+          <input id="messageInput" type="text" maxlength="4000" placeholder="Xabar yozing..." disabled>
+          <button id="sendMessageBtn" type="submit" class="btn primary" disabled>
+            <i class="fa-solid fa-paper-plane"></i> Yuborish
+          </button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <div id="privateModal" class="modal hidden">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>Private chat yaratish</h3>
+        <button class="icon-btn" type="button" data-close-modal="privateModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="privateForm" class="modal-form">
+        <label for="privateReceiverSelect">Receiver</label>
+        <select id="privateReceiverSelect" class="text-input" required></select>
+        <button class="btn primary" type="submit">Yaratish</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="groupModal" class="modal hidden">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>Group chat yaratish</h3>
+        <button class="icon-btn" type="button" data-close-modal="groupModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="groupForm" class="modal-form">
+        <label for="groupNameInput">Nomi</label>
+        <input id="groupNameInput" class="text-input" type="text" maxlength="255" required>
+
+        <label for="groupDescInput">Tavsif</label>
+        <textarea id="groupDescInput" class="text-input area" maxlength="255"></textarea>
+
+        <div class="checklist-head">
+          <span>A'zolar</span>
+          <span id="groupMemberCount">0 ta tanlangan</span>
         </div>
-        
-        <div class="tabs">
-            <div class="tab active">Vse chati <span class="badge">34</span></div>
-            <div class="tab">Groups <span class="badge">10</span></div>
-            <div class="tab">Channels</div>
-        </div>
+        <div id="groupMemberChecklist" class="check-grid"></div>
 
-        <div class="chat-list">
-            <div class="chat-item create-btn" onclick="createGroup()">
-                <div class="avatar blue"><i class="fas fa-users"></i></div>
-                <div class="chat-info">
-                    <div class="chat-name">Yangi guruh yaratish</div>
-                </div>
-            </div>
-            </div>
-    </aside>
+        <button class="btn primary" type="submit">Group yaratish</button>
+      </form>
+    </div>
+  </div>
 
-    <main class="chat-window">
-        <header class="chat-header">
-            <div class="header-details">
-                <div class="active-chat-name">Speaking | Easy C1</div>
-                <div class="active-chat-status">31 107 podpischikov</div>
-            </div>
-            <div class="header-actions">
-                <i class="fas fa-search"></i>
-                <i class="fas fa-ellipsis-v"></i>
-            </div>
-        </header>
+  <div id="editGroupModal" class="modal hidden">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>Group ma'lumotini yangilash</h3>
+        <button class="icon-btn" type="button" data-close-modal="editGroupModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="editGroupForm" class="modal-form">
+        <label for="editGroupNameInput">Yangi nom</label>
+        <input id="editGroupNameInput" class="text-input" type="text" maxlength="255" required>
 
-        <div class="messages-container" id="messageBox">
-            </div>
+        <label for="editGroupDescInput">Yangi tavsif</label>
+        <textarea id="editGroupDescInput" class="text-input area" maxlength="255"></textarea>
 
-        <footer class="chat-footer">
-            <form id="messageForm" class="message-input-wrapper">
-                <i class="far fa-smile"></i>
-                <input type="text" id="msgInput" placeholder="Xabar yozing..." autocomplete="off">
-                <i class="fas fa-paperclip"></i>
-                <button type="submit" id="sendBtn" class="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
-        </footer>
-    </main>
-</div>
-    <script src="./js/app.js"></script>
+        <button class="btn primary" type="submit">Saqlash</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="membersModal" class="modal hidden">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>Group a'zolari</h3>
+        <button class="icon-btn" type="button" data-close-modal="membersModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <ul id="membersList" class="list compact"></ul>
+    </div>
+  </div>
+
+  <div id="toastStack" class="toast-stack"></div>
+
+  <script src="./js/app.js"></script>
 </body>
 </html>

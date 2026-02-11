@@ -1,56 +1,40 @@
 include .env
-MIGRATIONS_PATH = ./cmd/migrate/migrations
 
-DB_URL = postgres://admin:admin@localhost:5432/chat_db?sslmode=disable
+MIGRATIONS_PATH := ./cmd/migrate/migrations
+DB_URL := postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable
 
+.PHONY: build-api run-api migration migrate-up migrate-down docker-up docker-build docker-down docker-logs clean gen-docs
 
-.PHONY: Build the app
-build:
-	go build -o bin/$(chatX) cmd/app
+build-api:
+	go build -o bin/chatx-api ./cmd/api
 
-.PHONY: Run the app
-run:
-	go run cmd/app
+run-api:
+	go run ./cmd/api
 
-
-.PHONY: migrate-create
 migration:
 	@migrate create -seq -ext sql -dir $(MIGRATIONS_PATH) $(filter-out $@,$(MAKECMDGOALS))
 
-
-.PHONY: migrate-up
 migrate-up:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) up
 
-
-.PHONY: migrate-down
 migrate-down:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_URL) down $(filter-out $@,$(MAKECMDGOALS))
 
-
-.PHONY: up build down logs clean
-up: 
-	@echo "Docker konteynerlarni ishga tushirish..."
+docker-up:
 	docker compose up -d
 
-build:
-	@echo "Docker konteynerlarni qayta qurish..."
+docker-build:
 	docker compose build
 
-
-down:
-	@echo "Docker konteynerlarni to'xtatish va o'chirish..."
+docker-down:
 	docker compose down
 
-logs:
-	@echo "Barcha xizmatlarning loglari..."
-	docker compose logs 
+docker-logs:
+	docker compose logs
 
-clean: down
-	@echo "Volume va tarmoqlarni tozalash..."
-	docker volume prune 
-	docker network prune 
+clean: docker-down
+	docker volume prune
+	docker network prune
 
-.PHONY: gen-docs
 gen-docs:
-	@swag init -g api/main.go -d cmd,internal && swag fmt
+	@swag init -g main.go -d cmd/api,internal -o docs && swag fmt

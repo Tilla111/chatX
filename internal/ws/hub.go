@@ -81,13 +81,19 @@ func (h *Hub) BroadcastReadStatus(chatID int64, readerID string, recipientID str
 		"chat_id":   chatID,
 		"reader_id": readerID,
 	}
-	data, _ := json.Marshal(payload)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
 
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if client, ok := h.Clients[recipientID]; ok {
-		client.Send <- data
+		select {
+		case client.Send <- data:
+		default:
+		}
 	}
 }
 
@@ -115,7 +121,10 @@ func (h *Hub) BroadcastMessageUpdate(chatID, msgID int64, newText string, recipi
 		"message_text": newText,
 	}
 
-	data, _ := json.Marshal(payload)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
 	h.broadcastToRecipients(recipients, data)
 }
 
@@ -127,6 +136,9 @@ func (h *Hub) BroadcastMessageDelete(chatID, msgID int64, recipients []string) {
 		"message_id": msgID,
 	}
 
-	data, _ := json.Marshal(payload)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
 	h.broadcastToRecipients(recipients, data)
 }

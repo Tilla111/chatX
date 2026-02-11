@@ -8,28 +8,44 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
-type ChatReq struct {
-	SenderID   int64 `json:"sender_id" validate:"required,max=255"`
-	ReceiverID int64 `json:"receiver_id" validate:"required,max=255"`
+type createPrivateChatRequest struct {
+	ReceiverID int64 `json:"receiver_id" validate:"required,gt=0"`
 }
 
-// CreateGroupChatHandler godoc
-// @Summary      Guruh suhbatini yaratish
-// @Description  Yangi guruh yaratadi va foydalanuvchilarni unga qo'shadi
+type createGroupRequest struct {
+	MemberIDs   []int64 `json:"member_ids" validate:"required,min=1,dive,gt=0"`
+	Name        string  `json:"name" validate:"required,max=255"`
+	Description string  `json:"description" validate:"max=255"`
+}
+
+type updateGroupRequest struct {
+	Name        string `json:"name" validate:"required,max=255"`
+	Description string `json:"description" validate:"max=255"`
+}
+
+// CreatePrivateChatHandler godoc
+// @Summary      Private chat yaratish
+// @Description  Ikki foydalanuvchi orasida private chat yaratadi. Agar chat oldin yaratilgan bo'lsa, o'sha chat_id qaytadi.
 // @Tags         chats
 // @Accept       json
 // @Produce      json
-// @Param        payload body groupReq true "Guruh ma'lumotlari"
-// @Success      201  {object}  map[string]int64 "Guruh IDsi qaytadi"
-// @Failure      400  {object}  error "Noto'g'ri so'rov yuborilgan"
-// @Failure      500  {object}  error "Server xatoligi"
+// @Param        X-User-ID  header    int                       true   "Joriy foydalanuvchi IDsi"
+// @Param        payload    body      createPrivateChatRequest  true   "Private chat uchun receiver ma'lumoti"
+// @Success      201        {object}  map[string]any            "{"data":{"chat_id":12}}"
+// @Failure      400        {object}  map[string]string         "So'rov noto'g'ri"
+// @Failure      401        {object}  map[string]string         "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      500        {object}  map[string]string         "Ichki server xatosi"
 // @Router       /chats [post]
 func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request) {
+	senderID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
 
-	var req ChatReq
+	var req createPrivateChatRequest
 	if err := readJSON(w, r, &req); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -40,12 +56,10 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ctx := r.Context()
-
-	id, err := app.services.ChatSRVC.CreatePrivateChat(ctx, req.SenderID, req.ReceiverID)
+	chatID, err := app.services.ChatSRVC.CreatePrivateChat(r.Context(), senderID, req.ReceiverID)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			app.badRequestError(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
@@ -53,34 +67,31 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = writeJSON(w, http.StatusCreated, id)
-	if err != nil {
+	if err := app.jsonResponse(w, http.StatusCreated, map[string]int64{"chat_id": chatID}); err != nil {
 		app.internalServerError(w, r, err)
 	}
-
-}
-
-type groupReq struct {
-	SenderID    int64   `json:"sender_id" validate:"required,max=255"`
-	ReceiverID  []int64 `json:"receiver1_id" validate:"required,max=255"`
-	Name        string  `json:"name" validate:"required,max=255"`
-	Description string  `json:"description" validate:"required,max=255"`
 }
 
 // CreateGroupHandler godoc
-// @Summary      Guruh suhbatini yaratish
-// @Description  Yangi guruh chatini yaratadi va a'zolarni biriktiradi
+// @Summary      Group chat yaratish
+// @Description  Yangi group chat yaratadi, joriy userni owner qiladi va `member_ids` dagi userlarni qo'shadi.
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        payload body groupReq true "Guruh yaratish ma'lumotlari"
-// @Success      201  {object}  map[string]interface{} "Guruh muvaffaqiyatli yaratildi"
-// @Failure      400  {object}  map[string]string      "Noto'g'ri so'rov yoki validatsiya xatosi"
-// @Failure      500  {object}  map[string]string      "Server ichki xatosi"
+// @Param        X-User-ID  header    int                 true   "Joriy foydalanuvchi IDsi (owner bo'ladi)"
+// @Param        payload    body      createGroupRequest  true   "Group yaratish ma'lumotlari"
+// @Success      201        {object}  map[string]any      "{"data":{"chat_id":17}}"
+// @Failure      400        {object}  map[string]string   "So'rov noto'g'ri"
+// @Failure      401        {object}  map[string]string   "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      500        {object}  map[string]string   "Ichki server xatosi"
 // @Router       /groups [post]
 func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	senderID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
 
-	var req groupReq
+	var req createGroupRequest
 	if err := readJSON(w, r, &req); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -91,110 +102,116 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx := r.Context()
-
 	group := service.Group{
-		SenderID:    req.SenderID,
-		ReceiverID:  req.ReceiverID,
+		SenderID:    senderID,
+		ReceiverID:  req.MemberIDs,
 		Name:        req.Name,
 		Description: req.Description,
 	}
 
-	id, err := app.services.ChatSRVC.CreateGroupChat(ctx, &group)
+	chatID, err := app.services.ChatSRVC.CreateGroupChat(r.Context(), &group)
 	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
 			app.badRequestError(w, r, err)
 		default:
-			app.badRequestError(w, r, err)
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
 
-	err = writeJSON(w, http.StatusCreated, id)
-	if err != nil {
+	if err := app.jsonResponse(w, http.StatusCreated, map[string]int64{"chat_id": chatID}); err != nil {
 		app.internalServerError(w, r, err)
 	}
-
 }
 
 // GetUserChatsHandler godoc
-// @Summary      Foydalanuvchi chatlarini ro'yxatini olish
-// @Description  Tizimga kirgan foydalanuvchining barcha shaxsiy va guruh suhbatlarini qaytaradi.
+// @Summary      Joriy user chatlari
+// @Description  Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini qaytaradi.
 // @Tags         chats
-// @Accept       json
 // @Produce      json
-// @Param        search  query     string  false  "Chat nomi yoki oxirgi xabar bo'yicha qidirish"
-// @Success      200     {object}   map[string][]service.ChatInfo  "Chatlar ro'yxati muvaffaqiyatli qaytarildi"
-// @Failure      401     {object}  map[string]string "Avtorizatsiyadan o'tilmagan"
-// @Failure      500     {object}  map[string]string "Serverning ichki xatosi"
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        search     query     string             false  "Chat nomi bo'yicha qidiruv"
+// @Success      200        {object}  map[string]any     "{"data":[...chatlar...]}"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats [get]
 func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Request) {
-
-	userID := int64(1)
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
 
 	searchTerm := r.URL.Query().Get("search")
-
-	ctx := r.Context()
-
-	chats, err := app.services.ChatSRVC.GetUserChats(ctx, userID, searchTerm)
+	chats, err := app.services.ChatSRVC.GetUserChats(r.Context(), userID, searchTerm)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	app.jsonResponse(w, http.StatusOK, chats)
-}
-
-type group struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name" validate:"required,max=255"`
-	Description string `json:"description" validate:"required,max=255"`
+	if err := app.jsonResponse(w, http.StatusOK, chats); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
 
 // UpdateChatHandler godoc
-// @Summary      Guruh ma'lumotlarini yangilash
-// @Description  Mavjud guruhning nomi va tavsifini o'zgartiradi. Chat ID path orqali yuboriladi.
+// @Summary      Group ma'lumotlarini yangilash
+// @Description  Berilgan `chat_id` bo'yicha group nomi va description qiymatlarini yangilaydi.
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        chat_id      path      int     true  "Yangilanadigan chat (guruh) IDsi"
-// @Param        request_body  body      group   true  "Yangi guruh ma'lumotlari"
-// @Success      200           {string}  string  "Muvaffaqiyatli yangilandi"
-// @Failure      400           {object}  map[string]string "Noto'g'ri ID yoki validatsiya xatosi"
-// @Failure      404           {object}  map[string]string "Guruh topilmadi"
-// @Failure      500           {object}  map[string]string "Server xatosi"
-// @Router       /groups/{chat_id} [put]
+// @Param        X-User-ID  header    int                 true   "Joriy foydalanuvchi IDsi"
+// @Param        chat_id    path      int                 true   "Group chat ID"
+// @Param        payload    body      updateGroupRequest  true   "Yangilanadigan qiymatlar"
+// @Success      200        {object}  map[string]any      "{"data":{"result":"updated"}}"
+// @Failure      400        {object}  map[string]string   "ID yoki body noto'g'ri"
+// @Failure      401        {object}  map[string]string   "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      404        {object}  map[string]string   "Group topilmadi"
+// @Failure      500        {object}  map[string]string   "Ichki server xatosi"
+// @Router       /groups/{chat_id} [patch]
 func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
+
+	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
+	if err != nil || chatID <= 0 {
+		app.badRequestError(w, r, errors.New("chat_id must be a positive integer"))
+		return
+	}
+
+	var req updateGroupRequest
+	if err := readJSON(w, r, &req); err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
-	var g group
-
-	if err := readJSON(w, r, &g); err != nil {
+	if err := Validate.Struct(req); err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
 	group := service.Chatgroup{
-		ChatID:      id,
-		GroupName:   g.Name,
-		Description: g.Description,
+		ChatID:      chatID,
+		GroupName:   req.Name,
+		Description: req.Description,
 	}
 
-	if err := Validate.Struct(group); err != nil {
-		app.badRequestError(w, r, err)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
 		return
 	}
 
-	ctx := r.Context()
-	_, err = app.services.ChatSRVC.Updatechat(ctx, &group)
+	_, err = app.services.ChatSRVC.Updatechat(r.Context(), &group)
 	if err != nil {
-		switch err {
-		case store.SqlNotfound:
+		switch {
+		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
@@ -202,29 +219,46 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{"result": "updated"}); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
 
 // DeleteChatHandler godoc
 // @Summary      Chatni o'chirish
-// @Description  Berilgan ID bo'yicha chatni (shaxsiy yoki guruh) butunlay o'chirib tashlaydi.
+// @Description  Berilgan `chat_id` bo'yicha chatni o'chiradi.
 // @Tags         chats
-// @Param        chat_id  path      int  true  "O'chirilishi kerak bo'lgan chat IDsi"
-// @Success      204      "Muvaffaqiyatli o'chirildi (kontent qaytarilmaydi)"
-// @Failure      400      {object}  map[string]string "Noto'g'ri ID formati"
-// @Failure      404      {object}  map[string]string "Chat topilmadi"
-// @Failure      500      {object}  map[string]string "Serverning ichki xatosi"
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        chat_id    path      int                true   "Chat ID"
+// @Success      204        "Muvaffaqiyatli o'chirildi"
+// @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      404        {object}  map[string]string  "Chat topilmadi"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats/{chat_id} [delete]
 func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
-		app.badRequestError(w, r, err)
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
 		return
 	}
 
-	ctx := r.Context()
+	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
+	if err != nil || chatID <= 0 {
+		app.badRequestError(w, r, errors.New("chat_id must be a positive integer"))
+		return
+	}
 
-	if err := app.services.ChatSRVC.DeleteChat(ctx, id); err != nil {
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
+		return
+	}
+
+	if err := app.services.ChatSRVC.DeleteChat(r.Context(), chatID); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)

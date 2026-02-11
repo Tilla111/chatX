@@ -2,31 +2,49 @@ package main
 
 import (
 	"chatX/internal/store"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 // GetMembersHandler godoc
-// @Summary      Guruh a'zolarini olish
-// @Description  Chat ID bo'yicha barcha a'zolar (foydalanuvchilar) ro'yxatini qaytaradi
+// @Summary      Chat a'zolarini olish
+// @Description  Berilgan group chat uchun a'zolar ro'yxatini qaytaradi. Faqat chat a'zosi ko'ra oladi.
 // @Tags         members
 // @Produce      json
-// @Param        chat_id  path      int  true  "Chat ID"
-// @Success      200      {object}  map[string][]store.User "Muvaffaqiyatli: {"data": [User ob'ektlari]}"
-// @Failure      400      {object}  map[string]string
-// @Failure      500      {object}  map[string]string
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        chat_id    path      int                true   "Group chat ID"
+// @Success      200        {object}  map[string]any     "{"data":[...a'zolar...]}"
+// @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /groups/{chat_id}/members [get]
 func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
-		app.badRequestError(w, r, err)
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
 		return
 	}
 
-	ctx := r.Context()
-	members, err := app.services.MemberSRV.GetByChatID(ctx, id)
+	chatID, err := strconv.ParseInt(chi.URLParam(r, "chat_id"), 10, 64)
+	if err != nil || chatID <= 0 {
+		app.badRequestError(w, r, errors.New("chat_id must be a positive integer"))
+		return
+	}
+
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
+		return
+	}
+
+	members, err := app.services.MemberSRV.GetByChatID(r.Context(), int(chatID))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -34,40 +52,47 @@ func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request
 
 	if err := app.jsonResponse(w, http.StatusOK, members); err != nil {
 		app.internalServerError(w, r, err)
-		return
 	}
 }
 
 // DeleteMemberHandler godoc
-// @Summary      Guruhdan a'zoni o'chirish
-// @Description  Guruh suhbatidan foydalanuvchini olib tashlaydi. Faqat guruh admini yoki foydalanuvchining o'zi (chiqib ketish) bajara oladi.
+// @Summary      A'zoni groupdan chiqarish
+// @Description  Groupdan userni chiqaradi. O'zini chiqarish mumkin, boshqa userni esa owner/admin chiqara oladi.
 // @Tags         members
-// @Param        chat_id  path      int  true  "Chat (guruh) IDsi"
-// @Param        user_id  path      int  true  "O'chirilishi kerak bo'lgan foydalanuvchi IDsi"
-// @Success      204      "Muvaffaqiyatli o'chirildi"
-// @Failure      400      {object}  map[string]string "ID xato yuborilgan"
-// @Failure      404      {object}  map[string]string "A'zo yoki chat topilmadi"
-// @Failure      500      {object}  map[string]string "Server xatosi"
-// @Router       /chats/{chat_id}/{user_id}/member [delete]
+// @Param        X-User-ID  header    int                true   "Amalni bajarayotgan foydalanuvchi IDsi"
+// @Param        chat_id    path      int                true   "Group chat ID"
+// @Param        user_id    path      int                true   "Chiqariladigan user ID"
+// @Success      204        "Muvaffaqiyatli chiqarildi"
+// @Failure      400        {object}  map[string]string  "Path param noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      403        {object}  map[string]string  "Ruxsat yo'q"
+// @Failure      404        {object}  map[string]string  "Member yoki chat topilmadi"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
+// @Router       /groups/{chat_id}/{user_id}/member [delete]
 func (app *application) DeleteMemberHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
-	if err != nil {
-		app.badRequestError(w, r, err)
+	actorID, ok := app.requireUserID(w, r)
+	if !ok {
 		return
 	}
 
-	uid, err := strconv.Atoi(chi.URLParam(r, "user_id"))
-	if err != nil {
-		app.badRequestError(w, r, err)
+	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
+	if err != nil || chatID <= 0 {
+		app.badRequestError(w, r, errors.New("chat_id must be a positive integer"))
 		return
 	}
 
-	ctx := r.Context()
-	err = app.services.MemberSRV.Delete(ctx, id, uid)
-	if err != nil {
-		switch err {
-		case store.SqlNotfound:
+	targetID, err := strconv.Atoi(chi.URLParam(r, "user_id"))
+	if err != nil || targetID <= 0 {
+		app.badRequestError(w, r, errors.New("user_id must be a positive integer"))
+		return
+	}
+
+	if err := app.services.MemberSRV.Delete(r.Context(), actorID, chatID, targetID); err != nil {
+		switch {
+		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)
+		case errors.Is(err, store.SqlForbidden):
+			app.forbiddenError(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
 		}

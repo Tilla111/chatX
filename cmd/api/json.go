@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -33,15 +35,19 @@ func readJSON(w http.ResponseWriter, r *http.Request, data any) error {
 		return err
 	}
 
+	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return errors.New("request body must only contain a single JSON object")
+	}
+
 	return nil
 }
 
 func writeJSONError(w http.ResponseWriter, status int, message string) error {
-	type envilope struct {
+	type envelope struct {
 		Error string `json:"error"`
 	}
 
-	return writeJSON(w, status, envilope{Error: message})
+	return writeJSON(w, status, envelope{Error: message})
 
 }
 

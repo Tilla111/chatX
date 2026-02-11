@@ -4,6 +4,7 @@ import (
 	"chatX/internal/store"
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type ChatSRVC struct {
@@ -31,6 +32,10 @@ func (s *ChatSRVC) CreatePrivateChat(ctx context.Context, senderID int64, receiv
 	if err == nil && existingChatID != 0 {
 		return existingChatID, nil
 	}
+	if err != nil && !errors.Is(err, store.SqlNotfound) {
+		return 0, err
+	}
+
 	var newChatID int64
 	err = s.repo.UnitOfWork.Do(ctx, func(ctx context.Context, repos *store.Storage) error {
 

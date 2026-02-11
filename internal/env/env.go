@@ -2,40 +2,43 @@ package env
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/stretchr/testify/assert/yaml"
+	"gopkg.in/yaml.v3"
 )
 
-type config struct {
+type Config struct {
 	App struct {
-		Name string `yaml:"name"`
-		ENV  string `yaml:"env"`
+		Name           string   `yaml:"name"`
+		ENV            string   `yaml:"env"`
+		APIURL         string   `yaml:"api_url"`
+		AllowedOrigins []string `yaml:"allowed_origins"`
 	} `yaml:"app"`
 
 	Server struct {
-		Port string `yaml:""`
+		Port string `yaml:"port"`
 	} `yaml:"server"`
 
 	Database struct {
-		Addr         string `yaml:""`
-		Host         string `yaml:""`
-		User         string `yaml:""`
-		Password     string `yaml:""`
-		Name         string `yaml:""`
-		MaxIdleConns int    `yaml:"MAX_IDLE_CONNS"`
-		MaxOpenConns int    `yaml:"MAX_OPEN_CONNS"`
-		MaxIdletime  string `yaml:"MAX_IDLE_TIME"`
+		Addr         string `yaml:"addr"`
+		Host         string `yaml:"host"`
+		User         string `yaml:"user"`
+		Password     string `yaml:"password"`
+		Name         string `yaml:"name"`
+		MaxIdleConns int    `yaml:"max_idle_conns"`
+		MaxOpenConns int    `yaml:"max_open_conns"`
+		MaxIdletime  string `yaml:"max_idle_time"`
 	}
 }
 
-func Load() (*config, error) {
+func Load() (*Config, error) {
 
 	_ = godotenv.Load()
 
-	c := &config{}
+	c := &Config{}
 
-	env := "dev"
+	env := getenv("APP_ENV", "dev")
 	file := "./internal/env/config." + env + ".yaml"
 
 	cfg, err := os.ReadFile(file)
@@ -48,12 +51,25 @@ func Load() (*config, error) {
 		return nil, err
 	}
 
-	c.Server.Port = getenv("PORT", "")
-	c.Database.Addr = getenv("DB_PORT", "")
-	c.Database.Host = getenv("DB_HOST", "")
-	c.Database.User = getenv("DB_USER", "")
-	c.Database.Password = getenv("DB_PASSWORD", "")
-	c.Database.Name = getenv("DB_NAME", "")
+	c.Server.Port = getenv("PORT", c.Server.Port)
+	c.Database.Addr = getenv("DB_PORT", c.Database.Addr)
+	c.Database.Host = getenv("DB_HOST", c.Database.Host)
+	c.Database.User = getenv("DB_USER", c.Database.User)
+	c.Database.Password = getenv("DB_PASSWORD", c.Database.Password)
+	c.Database.Name = getenv("DB_NAME", c.Database.Name)
+	c.App.APIURL = getenv("API_URL", c.App.APIURL)
+
+	if v := getenv("DB_MAX_IDLE_CONNS", ""); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			c.Database.MaxIdleConns = parsed
+		}
+	}
+	if v := getenv("DB_MAX_OPEN_CONNS", ""); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			c.Database.MaxOpenConns = parsed
+		}
+	}
+	c.Database.MaxIdletime = getenv("DB_MAX_IDLE_TIME", c.Database.MaxIdletime)
 
 	return c, nil
 }

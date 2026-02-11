@@ -7,6 +7,7 @@ import (
 )
 
 var SqlNotfound = errors.New("Not found")
+var SqlForbidden = errors.New("Forbidden")
 
 type DBTX interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -37,6 +38,8 @@ type Storage struct {
 	MemberStorage interface {
 		AddMember(ctx context.Context, member *Member) error
 		GetByChatID(ctx context.Context, ChatID int) ([]User, error)
+		GetRole(ctx context.Context, chatID int64, userID int64) (string, error)
+		IsMember(ctx context.Context, chatID int64, userID int64) (bool, error)
 		Delete(ctx context.Context, chatID, userID int) error
 	}
 

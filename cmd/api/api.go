@@ -1,17 +1,15 @@
 package main
 
 import (
-	"chatX/internal/store"
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
-	"fmt"
 	"net/http"
 	"time"
 
 	"chatX/docs"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/websocket"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"go.uber.org/zap"
@@ -19,7 +17,6 @@ import (
 
 type application struct {
 	config   config
-	strore   store.Storage
 	services service.Services
 	ws       *ws.Hub
 	logger   zap.SugaredLogger
@@ -47,7 +44,19 @@ type DBConfig struct {
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+
+		switch origin {
+		case "http://localhost:8080", "http://127.0.0.1:8080":
+			return true
+		default:
+			return false
+		}
+	},
 }
 
 func (app *application) mount() *chi.Mux {
@@ -61,7 +70,7 @@ func (app *application) mount() *chi.Mux {
 		r.Get("/health", app.healthCheck)
 		r.Get("/ws", app.handleWebSocket)
 
-		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.Addr)
+		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Route("/chats", func(r chi.Router) {
@@ -80,16 +89,13 @@ func (app *application) mount() *chi.Mux {
 
 		r.Route("/messages", func(r chi.Router) {
 			r.Post("/", app.MessageCreateHandler)
-			r.Patch("/{chat_id}", app.MarkAsReadHandler)
 			r.Patch("/{id}", app.MessageUpdateHandler)
 			r.Delete("/{id}", app.MessageDeleteHandler)
+			r.Patch("/chats/{chat_id}/read", app.MarkAsReadHandler)
 		})
 
 		r.Route("/users", func(r chi.Router) {
-
-			r.Route("/{user_id}", func(r chi.Router) {
-				r.Get("/", app.GetUserHandler)
-			})
+			r.Get("/", app.GetUserHandler)
 		})
 	})
 
@@ -101,9 +107,14 @@ func (app *application) mount() *chi.Mux {
 }
 
 func (app *application) run(Addr string, handler *chi.Mux) error {
+	host := app.config.apiURL
+	if host == "" {
+		host = "localhost" + Addr
+	}
+
 	// Docs
 	docs.SwaggerInfo.Version = Version
-	docs.SwaggerInfo.Host = app.config.apiURL
+	docs.SwaggerInfo.Host = host
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	srv := &http.Server{

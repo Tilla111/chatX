@@ -1,6 +1,9 @@
 package store
 
-import "context"
+import (
+	"context"
+	"database/sql"
+)
 
 type Message struct {
 	ID          int64
@@ -85,7 +88,12 @@ func (s *MessageStorage) GetByID(ctx context.Context, id int64) (*Message, error
 	)
 
 	if err != nil {
-		return nil, err
+		switch err {
+		case sql.ErrNoRows:
+			return nil, SqlNotfound
+		default:
+			return nil, err
+		}
 	}
 
 	return &m, nil
@@ -113,16 +121,21 @@ func (s *MessageStorage) GetMessages(ctx context.Context, chatID int64) ([]Messa
 		}
 		messages = append(messages, msg)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return messages, nil
 }
 
 func (s *MessageStorage) MarkAsRead(ctx context.Context, chatID, userID int64) error {
 	query := `
-        UPDATE messages 
-        SET is_read = TRUE 
-        WHERE chat_id = $1 
-          AND sender_id != $2 
-          AND is_read = FALSE`
+        INSERT INTO message_reads (message_id, user_id, read_at)
+        SELECT m.id, $2, NOW()
+        FROM messages m
+        WHERE m.chat_id = $1
+          AND m.sender_id <> $2
+        ON CONFLICT (message_id, user_id) DO NOTHING`
 
 	_, err := s.db.ExecContext(ctx, query, chatID, userID)
 	return err
@@ -132,13 +145,37 @@ func (s *MessageStorage) MarkAsRead(ctx context.Context, chatID, userID int64) e
 func (s *MessageStorage) Update(ctx context.Context, msgID, userID int64, newText string) error {
 	query := `UPDATE messages SET message_text = $1, updated_at = NOW() 
               WHERE id = $2 AND sender_id = $3`
-	_, err := s.db.ExecContext(ctx, query, newText, msgID, userID)
-	return err
+	result, err := s.db.ExecContext(ctx, query, newText, msgID, userID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return SqlNotfound
+	}
+
+	return nil
 }
 
 // Delete
 func (s *MessageStorage) Delete(ctx context.Context, msgID, userID int64) error {
 	query := `DELETE FROM messages WHERE id = $1 AND sender_id = $2`
-	_, err := s.db.ExecContext(ctx, query, msgID, userID)
-	return err
+	result, err := s.db.ExecContext(ctx, query, msgID, userID)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return SqlNotfound
+	}
+
+	return nil
 }

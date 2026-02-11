@@ -18,7 +18,7 @@ type User struct {
 }
 
 func (s *UserSrvc) CreateUser(ctx context.Context, user *store.User) error {
-	return nil
+	return s.repo.UserStore.CreateUser(ctx, user)
 }
 
 func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error) {
@@ -35,7 +35,7 @@ func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.Paginatio
 			ID:        u.ID,
 			UserName:  u.UserName,
 			Email:     u.Email,
-			Password:  u.Password,
+			Password:  string(u.Password),
 			CreatedAt: u.CreatedAt,
 		})
 	}

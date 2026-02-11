@@ -2,34 +2,24 @@ package main
 
 import (
 	"chatX/internal/ws"
-	"log"
 	"net/http"
+	"strconv"
 )
 
-var testUsers = map[string]string{
-	"1": "Ali",
-	"2": "Vali",
-	"3": "Gani",
-}
-
 func (app *application) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-
-	id := r.URL.Query().Get("user_id")
-
-	// Test: Faqat ro'yxatdagi foydalanuvchilarga ruxsat beramiz
-	if _, ok := testUsers[id]; !ok {
-		http.Error(w, "Foydalanuvchi topilmadi", http.StatusForbidden)
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
 		return
 	}
 
 	conn, err := app.config.Upgrade.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
 	client := &ws.Client{
-		ID:   id,
+		ID:   strconv.FormatInt(userID, 10),
 		Hub:  app.ws,
 		Conn: conn,
 		Send: make(chan []byte, 256),

@@ -25,7 +25,7 @@ func (app *application) badRequestError(w http.ResponseWriter, r *http.Request, 
 		"path", r.URL.Path,
 	)
 
-	writeJSONError(w, http.StatusBadRequest, "bad request error")
+	writeJSONError(w, http.StatusBadRequest, err.Error())
 }
 
 func (app *application) notFoundError(w http.ResponseWriter, r *http.Request, err error) {
@@ -48,4 +48,26 @@ func (app *application) ConflictError(w http.ResponseWriter, r *http.Request, er
 	)
 
 	writeJSONError(w, http.StatusConflict, "Conflict error Cuncurrent")
+}
+
+func (app *application) unauthorizedError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("unauthorized request",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
+
+	writeJSONError(w, http.StatusUnauthorized, err.Error())
+}
+
+func (app *application) forbiddenError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Errorw("forbidden request",
+		"error", err,
+		"request_id", middleware.GetReqID(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
+
+	writeJSONError(w, http.StatusForbidden, err.Error())
 }

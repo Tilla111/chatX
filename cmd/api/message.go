@@ -1,39 +1,83 @@
 package main
 
 import (
+	"chatX/internal/store"
 	service "chatX/internal/usecase"
+	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
+
+type createMessageRequest struct {
+	ChatID      int64  `json:"chat_id" validate:"required,gt=0"`
+	MessageText string `json:"message_text" validate:"required,max=4000"`
+}
+
+type updateMessageRequest struct {
+	MessageText string `json:"message_text" validate:"required,max=4000"`
+}
+
+func parsePathInt64(raw string, paramName string) (int64, error) {
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id <= 0 {
+		return 0, errors.New(paramName + " must be a positive integer")
+	}
+	return id, nil
+}
 
 // MessageCreateHandler godoc
 // @Summary      Xabar yuborish
-// @Description  Yangi xabar yaratadi va uni guruh a'zolariga WebSocket orqali real-vaqtda tarqatadi.
+// @Description  Joriy foydalanuvchi berilgan chatga yangi xabar yuboradi.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        payload body service.Message true "Xabar ma'lumotlari"
-// @Success      201  {object}  map[string]service.Message "Xabar yaratildi: {"data": {message_object}}"
-// @Failure      400  {object}  map[string]string "Noto'g'ri JSON formati"
-// @Failure      500  {object}  map[string]string "Server xatosi"
+// @Param        X-User-ID  header    int                   true   "Joriy foydalanuvchi IDsi"
+// @Param        payload    body      createMessageRequest  true   "Xabar yuborish ma'lumotlari"
+// @Success      201        {object}  map[string]any        "{"data":{...xabar...}}"
+// @Failure      400        {object}  map[string]string     "Body noto'g'ri"
+// @Failure      401        {object}  map[string]string     "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      403        {object}  map[string]string     "User chat a'zosi emas"
+// @Failure      500        {object}  map[string]string     "Ichki server xatosi"
 // @Router       /messages [post]
 func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Request) {
-	var req service.Message
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
+
+	var req createMessageRequest
 	if err := readJSON(w, r, &req); err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
+	if err := Validate.Struct(req); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
 
-	ctx := r.Context()
-	msg, err := app.services.MessageSRV.Create(ctx, req)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), req.ChatID, userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
+		return
+	}
+
+	msg, err := app.services.MessageSRV.Create(r.Context(), service.Message{
+		ChatID:      req.ChatID,
+		SenderID:    userID,
+		MessageText: req.MessageText,
+	})
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	memberUsers, err := app.services.MemberSRV.GetByChatID(ctx, int(msg.ChatID))
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), int(msg.ChatID))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -44,162 +88,262 @@ func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Requ
 		memberIDs[i] = strconv.FormatInt(user.ID, 10)
 	}
 
-	senderIDStr := strconv.FormatInt(msg.SenderID, 10)
-
 	go app.ws.BroadcastChatMessage(
-		msg.ChatID,      // int64
-		msg.ChatName,    // string
-		senderIDStr,     // string
-		msg.SenderName,  // string
-		msg.MessageText, // string
-		memberIDs,       // []string
+		msg.ChatID,
+		msg.ChatName,
+		strconv.FormatInt(msg.SenderID, 10),
+		msg.SenderName,
+		msg.MessageText,
+		memberIDs,
 	)
 
-	app.jsonResponse(w, http.StatusCreated, msg)
+	if err := app.jsonResponse(w, http.StatusCreated, msg); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
 
 // GetMessagesHandler godoc
 // @Summary      Chat xabarlarini olish
-// @Description  Berilgan chat_id bo'yicha barcha xabarlar tarixini qaytaradi.
+// @Description  Berilgan chatdagi xabarlar tarixini qaytaradi. Faqat chat a'zosi ko'ra oladi.
 // @Tags         messages
 // @Produce      json
-// @Param        chat_id  path      int  true  "Chat ID"
-// @Success      200      {object}  map[string][]service.MessageDetail "Xabarlar ro'yxati: {"data": [MessageDetail ob'ektlari]}"
-// @Failure      400      {object}  map[string]string "Noto'g'ri ID"
-// @Failure      500      {object}  map[string]string "Server xatosi"
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        chat_id    path      int                true   "Chat ID"
+// @Success      200        {object}  map[string]any     "{"data":[...xabarlar...]}"
+// @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats/{chat_id}/messages [get]
 func (app *application) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
+
+	chatID, err := parsePathInt64(chi.URLParam(r, "chat_id"), "chat_id")
 	if err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
-	ctx := r.Context()
-	msg, err := app.services.MessageSRV.GetByChatID(ctx, int64(id))
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
+		return
+	}
+
+	msg, err := app.services.MessageSRV.GetByChatID(r.Context(), chatID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	app.jsonResponse(w, http.StatusOK, msg)
+	if err := app.jsonResponse(w, http.StatusOK, msg); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
 
 // MarkAsReadHandler godoc
-// @Summary      Xabarlarni o'qilgan deb belgilash
-// @Description  Chatdagi barcha xabarlarni joriy foydalanuvchi uchun o'qilgan holatiga o'tkazadi va bu haqda boshqa a'zolarga xabar beradi.
+// @Summary      Chatdagi xabarlarni o'qilgan deb belgilash
+// @Description  Joriy foydalanuvchi uchun berilgan chatdagi barcha kiruvchi xabarlarni o'qilgan holatiga o'tkazadi.
 // @Tags         messages
 // @Produce      json
-// @Param        chat_id  path      int  true  "Chat ID"
-// @Success      200      {object}  map[string]map[string]string "Muvaffaqiyatli: {"data": {"status": "success"}}"
-// @Failure      400      {object}  map[string]string "Noto'g'ri ID format"
-// @Failure      500      {object}  map[string]string "Server xatosi"
-// @Router       /messages/{chat_id} [patch]
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        chat_id    path      int                true   "Chat ID"
+// @Success      200        {object}  map[string]any     "{"data":{"status":"success"}}"
+// @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
+// @Router       /messages/chats/{chat_id}/read [patch]
 func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
 
-	chatIDStr := chi.URLParam(r, "chat_id")
-	chatID, _ := strconv.ParseInt(chatIDStr, 10, 64)
+	chatID, err := parsePathInt64(chi.URLParam(r, "chat_id"), "chat_id")
+	if err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
 
-	userID := int64(1)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if !isMember {
+		app.forbiddenError(w, r, errors.New("user is not a member of this chat"))
+		return
+	}
 
-	ctx := r.Context()
-	if err := app.services.MessageSRV.MarkChatAsRead(ctx, chatID, userID); err != nil {
+	if err := app.services.MessageSRV.MarkChatAsRead(r.Context(), chatID, userID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	memberUsers, err := app.services.MemberSRV.GetByChatID(ctx, int(chatID))
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), int(chatID))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	memberIDs := make([]string, len(memberUsers))
-	for i, user := range memberUsers {
-		memberIDs[i] = strconv.FormatInt(user.ID, 10)
+	readerID := strconv.FormatInt(userID, 10)
+	for _, user := range memberUsers {
+		recipientID := strconv.FormatInt(user.ID, 10)
+		if recipientID == readerID {
+			continue
+		}
+		go app.ws.BroadcastReadStatus(chatID, readerID, recipientID)
 	}
 
-	// MarkAsReadHandler ichida:
-	for _, memberID := range memberIDs {
-		go app.ws.BroadcastReadStatus(chatID, strconv.FormatInt(userID, 10), memberID)
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{"status": "success"}); err != nil {
+		app.internalServerError(w, r, err)
 	}
-
-	app.jsonResponse(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
 // MessageUpdateHandler godoc
 // @Summary      Xabarni tahrirlash
-// @Description  Yuborilgan xabar matnini o'zgartiradi va bu haqda guruh a'zolariga WebSocket orqali xabar beradi.
+// @Description  Joriy foydalanuvchi o'zi yuborgan xabar matnini yangilaydi.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        id      path      int     true  "Xabar IDsi"
-// @Param        payload body      object  true  "Tahrirlash ma'lumotlari (message_text va chat_id)"
-// @Success      200     {object}  map[string]map[string]string "Muvaffaqiyatli: {"data": {"result": "updated"}}"
-// @Failure      400     {object}  map[string]string "Noto'g'ri JSON yoki ID"
-// @Failure      500     {object}  map[string]string "Server xatosi"
+// @Param        X-User-ID  header    int                   true   "Joriy foydalanuvchi IDsi"
+// @Param        id         path      int                   true   "Xabar ID"
+// @Param        payload    body      updateMessageRequest  true   "Yangilangan xabar matni"
+// @Success      200        {object}  map[string]any        "{"data":{"result":"updated"}}"
+// @Failure      400        {object}  map[string]string     "ID yoki body noto'g'ri"
+// @Failure      401        {object}  map[string]string     "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      404        {object}  map[string]string     "Xabar topilmadi yoki userga tegishli emas"
+// @Failure      500        {object}  map[string]string     "Ichki server xatosi"
 // @Router       /messages/{id} [patch]
 func (app *application) MessageUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	msgID, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	userID := int64(1)
-
-	var input struct {
-		MessageText string `json:"message_text"`
-		ChatID      int64  `json:"chat_id"` // WS uchun kerak
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
 	}
-	if err := readJSON(w, r, &input); err != nil {
+
+	msgID, err := parsePathInt64(chi.URLParam(r, "id"), "id")
+	if err != nil {
 		app.badRequestError(w, r, err)
 		return
 	}
 
-	if err := app.services.MessageSRV.UpdateMessage(r.Context(), msgID, userID, input.MessageText); err != nil {
+	var req updateMessageRequest
+	if err := readJSON(w, r, &req); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+	if err := Validate.Struct(req); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	msg, err := app.services.MessageSRV.GetByID(r.Context(), msgID)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.SqlNotfound):
+			app.notFoundError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	if err := app.services.MessageSRV.UpdateMessage(r.Context(), msgID, userID, req.MessageText); err != nil {
+		switch {
+		case errors.Is(err, store.SqlNotfound):
+			app.notFoundError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), int(msg.ChatID))
+	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	// WebSocket orqali hammani xabardor qilish
-	memberUsers, _ := app.services.MemberSRV.GetByChatID(r.Context(), int(input.ChatID))
 	memberIDs := make([]string, len(memberUsers))
 	for i, user := range memberUsers {
 		memberIDs[i] = strconv.FormatInt(user.ID, 10)
 	}
-	go app.ws.BroadcastMessageUpdate(input.ChatID, msgID, input.MessageText, memberIDs)
 
-	app.jsonResponse(w, http.StatusOK, map[string]string{"result": "updated"})
+	go app.ws.BroadcastMessageUpdate(msg.ChatID, msgID, req.MessageText, memberIDs)
+
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{"result": "updated"}); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }
 
 // MessageDeleteHandler godoc
 // @Summary      Xabarni o'chirish
-// @Description  Xabarni ma'lumotlar bazasidan o'chiradi va WebSocket orqali barcha chat a'zolariga xabar o'chirilganligi haqida signal yuboradi.
+// @Description  Joriy foydalanuvchi o'zi yuborgan xabarni o'chiradi.
 // @Tags         messages
 // @Produce      json
-// @Param        id   path      int  true  "O'chirilishi kerak bo'lgan xabar IDsi"
-// @Success      200  {object}  map[string]map[string]string "Muvaffaqiyatli: {"data": {"result": "deleted"}}"
-// @Failure      400  {object}  map[string]string "Noto'g'ri ID format"
-// @Failure      404  {object}  map[string]string "Xabar topilmadi"
-// @Failure      500  {object}  map[string]string "Server xatosi"
+// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        id         path      int                true   "Xabar ID"
+// @Success      200        {object}  map[string]any     "{"data":{"result":"deleted"}}"
+// @Failure      400        {object}  map[string]string  "ID noto'g'ri"
+// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      404        {object}  map[string]string  "Xabar topilmadi yoki userga tegishli emas"
+// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /messages/{id} [delete]
 func (app *application) MessageDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	msgID, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	userID := int64(1)
+	userID, ok := app.requireUserID(w, r)
+	if !ok {
+		return
+	}
 
-	// Xabar haqidagi ma'lumotni bazadan olish (chatID kerakligi uchun)
-	msg, _ := app.services.MessageSRV.GetByID(r.Context(), msgID)
+	msgID, err := parsePathInt64(chi.URLParam(r, "id"), "id")
+	if err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	msg, err := app.services.MessageSRV.GetByID(r.Context(), msgID)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.SqlNotfound):
+			app.notFoundError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
 
 	if err := app.services.MessageSRV.DeleteMessage(r.Context(), msgID, userID); err != nil {
+		switch {
+		case errors.Is(err, store.SqlNotfound):
+			app.notFoundError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), int(msg.ChatID))
+	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	// Chat a'zolarini olish
-	memberUsers, _ := app.services.MemberSRV.GetByChatID(r.Context(), int(msg.ChatID))
 	memberIDs := make([]string, len(memberUsers))
 	for i, user := range memberUsers {
 		memberIDs[i] = strconv.FormatInt(user.ID, 10)
 	}
 
-	// WebSocket signalini yuborish
 	go app.ws.BroadcastMessageDelete(msg.ChatID, msgID, memberIDs)
 
-	app.jsonResponse(w, http.StatusOK, map[string]string{"result": "deleted"})
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{"result": "deleted"}); err != nil {
+		app.internalServerError(w, r, err)
+	}
 }

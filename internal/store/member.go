@@ -1,6 +1,9 @@
 package store
 
-import "context"
+import (
+	"context"
+	"database/sql"
+)
 
 type Member struct {
 	ID       int64  `json:"id"`
@@ -21,9 +24,9 @@ func (s *MemberStorage) AddMember(ctx context.Context, member *Member) error {
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
-		&member.ChatID,
-		&member.UserID,
-		&member.Rol,
+		member.ChatID,
+		member.UserID,
+		member.Rol,
 	).Scan(
 		&member.ID,
 		&member.JoinedAt,
@@ -68,10 +71,41 @@ func (s *MemberStorage) GetByChatID(ctx context.Context, ChatID int) ([]User, er
 	return members, nil
 }
 
-// deleteMember
+func (s *MemberStorage) GetRole(ctx context.Context, chatID int64, userID int64) (string, error) {
+	query := `SELECT rol FROM chat_members WHERE chat_id = $1 AND user_id = $2`
 
+	var role string
+	err := s.db.QueryRowContext(ctx, query, chatID, userID).Scan(&role)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return "", SqlNotfound
+		default:
+			return "", err
+		}
+	}
+
+	return role, nil
+}
+
+func (s *MemberStorage) IsMember(ctx context.Context, chatID int64, userID int64) (bool, error) {
+	query := `SELECT 1 FROM chat_members WHERE chat_id = $1 AND user_id = $2`
+
+	var exists int
+	err := s.db.QueryRowContext(ctx, query, chatID, userID).Scan(&exists)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+// deleteMember
 func (s *MemberStorage) Delete(ctx context.Context, chatID, userID int) error {
-	query := `DELETE FROM chat_members m WHERE (m.chat_id = $1 AND (m.user_id = $2)`
+	query := `DELETE FROM chat_members WHERE chat_id = $1 AND user_id = $2`
 
 	rows, err := s.db.ExecContext(
 		ctx,

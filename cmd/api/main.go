@@ -28,29 +28,35 @@ const Version = "v1.0.0"
 //
 // @securityDefinitions.apikey	ApiKeyAuth
 // @in							header
-// @name						Authorization
-// @description
+// @name						X-User-ID
+// @description				Joriy foydalanuvchi IDsi (demo auth uchun)
 func main() {
 
-	env, err := env.Load()
+	cfgEnv, err := env.Load()
 	if err != nil {
 		log.Fatalf("Error loading env: %v", err)
 	}
 
+	addr := cfgEnv.Server.Port
+	if addr != "" && addr[0] != ':' {
+		addr = ":" + addr
+	}
+
 	cfg := config{
-		Addr: ":" + env.Server.Port,
+		Addr: addr,
 		DB: DBConfig{
-			Addr:         env.Database.Addr,
-			Host:         env.Database.Host,
-			User:         env.Database.User,
-			Password:     env.Database.Password,
-			Name:         env.Database.Name,
-			MaxIdleConns: env.Database.MaxIdleConns,
-			MaxOpenConns: env.Database.MaxOpenConns,
-			MaxIdletime:  env.Database.MaxIdletime,
+			Addr:         cfgEnv.Database.Addr,
+			Host:         cfgEnv.Database.Host,
+			User:         cfgEnv.Database.User,
+			Password:     cfgEnv.Database.Password,
+			Name:         cfgEnv.Database.Name,
+			MaxIdleConns: cfgEnv.Database.MaxIdleConns,
+			MaxOpenConns: cfgEnv.Database.MaxOpenConns,
+			MaxIdletime:  cfgEnv.Database.MaxIdletime,
 		},
-		ENV:     env.App.ENV,
+		ENV:     cfgEnv.App.ENV,
 		Upgrade: Upgrader,
+		apiURL:  cfgEnv.App.APIURL,
 	}
 
 	logger := *zap.Must(zap.NewProduction()).Sugar()
@@ -84,7 +90,6 @@ func main() {
 
 	app := &application{
 		config:   cfg,
-		strore:   *storage,
 		services: *services,
 		ws:       hub,
 		logger:   logger,

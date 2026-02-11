@@ -37,7 +37,7 @@ func (s *Chatstorage) Createchat(ctx context.Context, chat *Chat) (int64, error)
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
-		&chat.ChatType,
+		chat.ChatType,
 	).Scan(
 		&chat.ID,
 		&chat.CreatedAt,
@@ -88,11 +88,16 @@ func (s *Chatstorage) GetChatByUserID(ctx context.Context, id int64, searchTerm 
         cm.joined_at,
         COALESCE(m.message_text, '') AS last_message,
         m.created_at AS last_message_at,
-        -- O'qilmagan xabarlar sonini hisoblash
-        (SELECT COUNT(*) FROM messages m2 
-         WHERE m2.chat_id = c.id 
-           AND m2.sender_id != $1 
-           AND m2.is_read = FALSE) AS unread_count
+        (SELECT COUNT(*)
+         FROM messages m2
+         WHERE m2.chat_id = c.id
+           AND m2.sender_id != $1
+           AND NOT EXISTS (
+               SELECT 1
+               FROM message_reads mr
+               WHERE mr.message_id = m2.id
+                 AND mr.user_id = $1
+           )) AS unread_count
     FROM chat_members cm
     JOIN chats c ON cm.chat_id = c.id
     LEFT JOIN group_info gi ON c.id = gi.chat_id
@@ -144,6 +149,10 @@ func (s *Chatstorage) GetChatByUserID(ctx context.Context, id int64, searchTerm 
 
 		chats = append(chats, &c)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return chats, nil
 }
 
