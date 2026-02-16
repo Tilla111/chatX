@@ -17,6 +17,7 @@ import (
 
 type application struct {
 	config   config
+	mail     MailConfig
 	services service.Services
 	ws       *ws.Hub
 	logger   zap.SugaredLogger
@@ -39,6 +40,10 @@ type DBConfig struct {
 	MaxIdleConns int
 	MaxOpenConns int
 	MaxIdletime  string
+}
+
+type MailConfig struct {
+	exp time.Duration
 }
 
 var Upgrader = websocket.Upgrader{
@@ -97,6 +102,10 @@ func (app *application) mount() *chi.Mux {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", app.GetUserHandler)
+
+			r.Route("/authentication", func(r chi.Router) {
+				r.Post("/", app.registerUserHandler)
+			})
 		})
 	})
 

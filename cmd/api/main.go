@@ -7,6 +7,7 @@ import (
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
 	"log"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -93,6 +94,9 @@ func main() {
 		services: *services,
 		ws:       hub,
 		logger:   logger,
+		mail: MailConfig{
+			exp: time.Hour * 24 * 3, //3 Days
+		},
 	}
 
 	handler := app.mount()

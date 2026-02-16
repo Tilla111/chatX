@@ -1100,6 +1100,61 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/authentication": {
+            "post": {
+                "description": "Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun token qaytaradi.\nFrontend faqat ` + "`" + `username` + "`" + `, ` + "`" + `email` + "`" + `, ` + "`" + `password` + "`" + ` maydonlarini yuborishi kerak.\nValidation qoidalari: ` + "`" + `username` + "`" + ` (required, max 50), ` + "`" + `email` + "`" + ` (required, email format, max 72), ` + "`" + `password` + "`" + ` (required).\nBody'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (` + "`" + `readJSON` + "`" + ` unknown fieldlarni rad etadi).\nMuvaffaqiyatli javob formati: ` + "`" + `{\"data\":\"\u003cactivation_token\u003e\"}` + "`" + `. Xatolik formati: ` + "`" + `{\"error\":\"\u003cmessage\u003e\"}` + "`" + `.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "Foydalanuvchini ro'yxatdan o'tkazish",
+                "parameters": [
+                    {
+                        "description": "Registration payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.RequestRegister"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "{\"data\":\"2f1a2e89-5e5f-4f73-8abf-2f3dca9f7b71\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Body/validation xatosi yoki email/username band",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ichki server xatosi",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1190,6 +1245,27 @@ const docTemplate = `{
                 "message_text": {
                     "type": "string",
                     "maxLength": 4000
+                }
+            }
+        },
+        "service.RequestRegister": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 72
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         }

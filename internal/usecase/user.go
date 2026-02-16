@@ -3,6 +3,11 @@ package service
 import (
 	"chatX/internal/store"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type UserSrvc struct {
@@ -17,8 +22,50 @@ type User struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (s *UserSrvc) CreateUser(ctx context.Context, user *store.User) error {
-	return s.repo.UserStore.CreateUser(ctx, user)
+type RequestRegister struct {
+	Username string `json:"username" validate:"required,max=50"`
+	Email    string `json:"email" validate:"required,email,max=72"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (s *UserSrvc) RegisterUser(ctx context.Context, user RequestRegister, exp time.Duration) (string, error) {
+
+	//gentoken
+	plaintoken := uuid.New().String()
+	hash := sha256.Sum256([]byte(plaintoken))
+	token := hex.EncodeToString(hash[:])
+
+	//tranzaction
+	err := s.repo.UnitOfWork.Do(ctx, func(ctx context.Context, repos *store.Storage) error {
+		//createuser
+		u := store.User{
+			UserName: user.Username,
+			Email:    user.Email,
+		}
+
+		password := store.Password{}
+		if err := password.Set(user.Password); err != nil {
+			return err
+		}
+		u.Password = password
+
+		if err := repos.UserStore.CreateUser(ctx, &u); err != nil {
+			return err
+		}
+
+		//token gen
+		if err := repos.UserStore.CreateTokenActivate(ctx, u.ID, token, exp); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	//sendEmail
+	return plaintoken, err
+
 }
 
 func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error) {
@@ -35,7 +82,6 @@ func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.Paginatio
 			ID:        u.ID,
 			UserName:  u.UserName,
 			Email:     u.Email,
-			Password:  string(u.Password),
 			CreatedAt: u.CreatedAt,
 		})
 	}

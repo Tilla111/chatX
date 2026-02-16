@@ -27,9 +27,11 @@ func (u *SQLUnitOfWork) Do(
 	}()
 
 	repos := &Storage{
-		Chatstorage:   &Chatstorage{tx},
-		MemberStorage: &MemberStorage{tx},
-		Groupstorage:  &Groupstorage{tx},
+		UserStore:      &UserStore{tx},
+		Chatstorage:    &Chatstorage{tx},
+		MemberStorage:  &MemberStorage{tx},
+		Groupstorage:   &Groupstorage{tx},
+		MessageStorage: &MessageStorage{tx},
 	}
 
 	if err := fn(ctx, repos); err != nil {

@@ -2,38 +2,66 @@ package store
 
 import (
 	"context"
-	"database/sql"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID        int64  `json:"id"`
-	UserName  string `json:"username"`
-	Email     string `json:"email"`
-	Password  []byte `json:"-"`
-	CreatedAt string `json:"created_at"`
+	ID        int64    `json:"id"`
+	UserName  string   `json:"username"`
+	Email     string   `json:"email"`
+	Password  Password `json:"-"`
+	CreatedAt string   `json:"created_at"`
+	IsActive  bool     `json:"is_active"`
+}
+
+type Password struct {
+	text string
+	hash []byte
+}
+
+func (p *Password) Set(text string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(text), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	p.text = text
+	p.hash = hash
+
+	return nil
 }
 
 type UserStore struct {
-	db *sql.DB
+	db DBTX
 }
 
 func (s *UserStore) CreateUser(ctx context.Context, user *User) error {
 
 	query := `INSERT INTO users(username, email, password)
-	VALUES ($1, $2, $3) RETURNING id, created_at`
+	VALUES ($1, $2, $3) RETURNING id, created_at, is_active`
 
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		user.UserName,
 		user.Email,
-		user.Password,
+		user.Password.hash,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
+		&user.IsActive,
 	)
 	if err != nil {
-		return err
+		switch err.Error() {
+		case `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case `pq: duplicate key value violates unique constraint "users_username_key"`:
+			return ErrDuplicateUsername
+		default:
+			return err
+		}
 	}
 
 	return nil
@@ -68,4 +96,17 @@ func (s *UserStore) GetAll(ctx context.Context, currentUserID int, pg *Paginatio
 	}
 
 	return users, nil
+}
+
+func (s *UserStore) CreateTokenActivate(ctx context.Context, userID int64, token string, exp time.Duration) error {
+	query := `INSERT INTO user_invitations(token, user_id, expiry) VALUES($1, $2, $3)`
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, query, token, userID, time.Now().Add(exp))
+	if err != nil {
+		return err
+	}
+	return nil
 }

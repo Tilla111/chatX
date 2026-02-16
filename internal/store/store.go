@@ -4,10 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
-var SqlNotfound = errors.New("Not found")
-var SqlForbidden = errors.New("Forbidden")
+var (
+	SqlNotfound          = errors.New("Not found")
+	SqlForbidden         = errors.New("Forbidden")
+	ErrDuplicateEmail    = errors.New("email already exists")
+	ErrDuplicateUsername = errors.New("username already exists")
+)
 
 type DBTX interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -25,6 +30,7 @@ type Storage struct {
 	UserStore interface {
 		CreateUser(ctx context.Context, User *User) error
 		GetAll(ctx context.Context, currentUserID int, pg *PaginationQuery) ([]User, error)
+		CreateTokenActivate(ctx context.Context, userID int64, token string, exp time.Duration) error
 	}
 
 	Chatstorage interface {

@@ -3,6 +3,7 @@ package service
 import (
 	"chatX/internal/store"
 	"context"
+	"time"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 
 type Services struct {
 	UserSrvc interface {
-		CreateUser(ctx context.Context, user *store.User) error
+		RegisterUser(ctx context.Context, user RequestRegister, exp time.Duration) (string, error)
 		GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error)
 	}
 

@@ -61,6 +61,21 @@ definitions:
     required:
     - message_text
     type: object
+  service.RequestRegister:
+    properties:
+      email:
+        maxLength: 72
+        type: string
+      password:
+        type: string
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
 info:
   contact:
     email: support@swagger.io
@@ -805,6 +820,47 @@ paths:
       summary: Foydalanuvchilar ro'yxati
       tags:
       - users
+  /users/authentication:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun token qaytaradi.
+        Frontend faqat `username`, `email`, `password` maydonlarini yuborishi kerak.
+        Validation qoidalari: `username` (required, max 50), `email` (required, email format, max 72), `password` (required).
+        Body'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (`readJSON` unknown fieldlarni rad etadi).
+        Muvaffaqiyatli javob formati: `{"data":"<activation_token>"}`. Xatolik formati: `{"error":"<message>"}`.
+      parameters:
+      - description: Registration payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/service.RequestRegister'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: '{"data":"2f1a2e89-5e5f-4f73-8abf-2f3dca9f7b71"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Body/validation xatosi yoki email/username band
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ichki server xatosi
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Foydalanuvchini ro'yxatdan o'tkazish
+      tags:
+      - authentication
 securityDefinitions:
   ApiKeyAuth:
     description: Joriy foydalanuvchi IDsi (demo auth uchun)
