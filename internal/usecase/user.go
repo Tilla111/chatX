@@ -53,19 +53,20 @@ func (s *UserSrvc) RegisterUser(ctx context.Context, user RequestRegister, exp t
 			return err
 		}
 
-		//token gen
+		//create user_nvetations
 		if err := repos.UserStore.CreateTokenActivate(ctx, u.ID, token, exp); err != nil {
 			return err
 		}
+
+		//sendEmail
 
 		return nil
 	})
 	if err != nil {
 		return "", err
 	}
-	//sendEmail
-	return plaintoken, err
 
+	return plaintoken, err
 }
 
 func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error) {
