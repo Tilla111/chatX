@@ -1,10 +1,13 @@
 package main
 
 import (
+	"chatX/internal/mailer"
 	"chatX/internal/store"
 	service "chatX/internal/usecase"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -36,18 +39,34 @@ func (app *application) requireUserID(w http.ResponseWriter, r *http.Request) (i
 	return userID, true
 }
 
+func (app *application) buildActivationURL(token string) string {
+	baseURL := strings.TrimSpace(app.config.apiURL)
+	if baseURL == "" {
+		baseURL = "localhost" + app.config.Addr
+	}
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "http://" + baseURL
+	}
+
+	return fmt.Sprintf(
+		"%s/api/v1/users/activate/%s",
+		strings.TrimRight(baseURL, "/"),
+		url.PathEscape(token),
+	)
+}
+
 // registerUserHandler godoc
 // @Summary      Foydalanuvchini ro'yxatdan o'tkazish
-// @Description  Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun token qaytaradi.
+// @Description  Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun email yuboradi.
 // @Description  Frontend faqat `username`, `email`, `password` maydonlarini yuborishi kerak.
 // @Description  Validation qoidalari: `username` (required, max 50), `email` (required, email format, max 72), `password` (required).
 // @Description  Body'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (`readJSON` unknown fieldlarni rad etadi).
-// @Description  Muvaffaqiyatli javob formati: `{"data":"<activation_token>"}`. Xatolik formati: `{"error":"<message>"}`.
+// @Description  Muvaffaqiyatli javob formati: `{"data":{"message":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
 // @Tags         authentication
 // @Accept       json
 // @Produce      json
 // @Param        payload  body      service.RequestRegister  true  "Registration payload"
-// @Success      201      {object}  map[string]string        "{"data":"2f1a2e89-5e5f-4f73-8abf-2f3dca9f7b71"}"
+// @Success      201      {object}  map[string]any           "{"data":{"message":"registration successful"}}"
 // @Failure      400      {object}  map[string]string        "Body/validation xatosi yoki email/username band"
 // @Failure      500      {object}  map[string]string        "Ichki server xatosi"
 // @Router       /users/authentication [post]
@@ -65,7 +84,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	exp := app.mail.exp
+	exp := app.config.mail.exp
 	ctx := r.Context()
 	token, err := app.services.UserSrvc.RegisterUser(ctx, req, exp)
 	if err != nil {
@@ -80,7 +99,25 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, token); err != nil {
+	activationURL := app.buildActivationURL(token)
+
+	isSandbox := app.config.ENV != "prod"
+	vars := struct {
+		Username      string
+		ActivationURL string
+	}{
+		Username:      req.Username,
+		ActivationURL: activationURL,
+	}
+	err = app.mailer.Send(mailer.UserWelcomeTemplate, req.Username, req.Email, vars, isSandbox)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, map[string]string{
+		"message": "registration successful. Check your email to activate your account.",
+	}); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

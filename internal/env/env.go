@@ -30,6 +30,13 @@ type Config struct {
 		MaxOpenConns int    `yaml:"max_open_conns"`
 		MaxIdletime  string `yaml:"max_idle_time"`
 	}
+	Email struct {
+		Host      string `yaml:"host"`
+		Port      int    `yaml:"port"`
+		Username  string `yaml:"username"`
+		Password  string `yaml:"password"`
+		FromEmail string `yaml:"fromEmail"`
+	}
 }
 
 func Load() (*Config, error) {
@@ -70,6 +77,15 @@ func Load() (*Config, error) {
 		}
 	}
 	c.Database.MaxIdletime = getenv("DB_MAX_IDLE_TIME", c.Database.MaxIdletime)
+	c.Email.Host = getenv("MAILTRAP_HOST", c.Email.Host)
+	if v := getenv("MAILTRAP_PORT", ""); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			c.Email.Port = parsed
+		}
+	}
+	c.Email.Username = getenv("MAILTRAP_USERNAME", c.Email.Username)
+	c.Email.Password = getenv("MAILTRAP_PASSWORD", c.Email.Password)
+	c.Email.FromEmail = getenv("FROM_EMAIL", c.Email.FromEmail)
 
 	return c, nil
 }

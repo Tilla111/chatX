@@ -1101,9 +1101,103 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/activate/{token}": {
+            "get": {
+                "description": "Foydalanuvchi emailiga yuborilgan activation linkdagi token orqali accountni faollashtiradi.\nFrontend tokenni URL path orqali yuboradi: ` + "`" + `/api/v1/users/activate/{token}` + "`" + `.\nBu endpoint body qabul qilmaydi, faqat path param token kerak bo'ladi.\nToken bir martalik: account faollashgandan keyin token o'chiriladi.\nToken noto'g'ri, eskirgan yoki allaqachon ishlatilgan bo'lsa 400 qaytadi.\nFrontend emaildagi linkdan to'g'ridan-to'g'ri ochish uchun ` + "`" + `GET` + "`" + `, API style chaqiriq uchun ` + "`" + `PUT` + "`" + ` ishlatishi mumkin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Accountni aktivatsiya qilish",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Emailga yuborilgan activation token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\":{\"message\":\"account activated successfully\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "{\"error\":\"activation token is required | Not found\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "{\"error\":\"internal server error\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Foydalanuvchi emailiga yuborilgan activation linkdagi token orqali accountni faollashtiradi.\nFrontend tokenni URL path orqali yuboradi: ` + "`" + `/api/v1/users/activate/{token}` + "`" + `.\nBu endpoint body qabul qilmaydi, faqat path param token kerak bo'ladi.\nToken bir martalik: account faollashgandan keyin token o'chiriladi.\nToken noto'g'ri, eskirgan yoki allaqachon ishlatilgan bo'lsa 400 qaytadi.\nFrontend emaildagi linkdan to'g'ridan-to'g'ri ochish uchun ` + "`" + `GET` + "`" + `, API style chaqiriq uchun ` + "`" + `PUT` + "`" + ` ishlatishi mumkin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Accountni aktivatsiya qilish",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Emailga yuborilgan activation token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"data\":{\"message\":\"account activated successfully\"}}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "{\"error\":\"activation token is required | Not found\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "{\"error\":\"internal server error\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/authentication": {
             "post": {
-                "description": "Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun token qaytaradi.\nFrontend faqat ` + "`" + `username` + "`" + `, ` + "`" + `email` + "`" + `, ` + "`" + `password` + "`" + ` maydonlarini yuborishi kerak.\nValidation qoidalari: ` + "`" + `username` + "`" + ` (required, max 50), ` + "`" + `email` + "`" + ` (required, email format, max 72), ` + "`" + `password` + "`" + ` (required).\nBody'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (` + "`" + `readJSON` + "`" + ` unknown fieldlarni rad etadi).\nMuvaffaqiyatli javob formati: ` + "`" + `{\"data\":\"\u003cactivation_token\u003e\"}` + "`" + `. Xatolik formati: ` + "`" + `{\"error\":\"\u003cmessage\u003e\"}` + "`" + `.",
+                "description": "Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun email yuboradi.\nFrontend faqat ` + "`" + `username` + "`" + `, ` + "`" + `email` + "`" + `, ` + "`" + `password` + "`" + ` maydonlarini yuborishi kerak.\nValidation qoidalari: ` + "`" + `username` + "`" + ` (required, max 50), ` + "`" + `email` + "`" + ` (required, email format, max 72), ` + "`" + `password` + "`" + ` (required).\nBody'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (` + "`" + `readJSON` + "`" + ` unknown fieldlarni rad etadi).\nMuvaffaqiyatli javob formati: ` + "`" + `{\"data\":{\"message\":\"...\"}}` + "`" + `. Xatolik formati: ` + "`" + `{\"error\":\"\u003cmessage\u003e\"}` + "`" + `.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1127,12 +1221,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "{\"data\":\"2f1a2e89-5e5f-4f73-8abf-2f3dca9f7b71\"}",
+                        "description": "{\"data\":{\"message\":\"registration successful\"}}",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {

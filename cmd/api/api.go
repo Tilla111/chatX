@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chatX/internal/mailer"
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
 	"net/http"
@@ -17,10 +18,10 @@ import (
 
 type application struct {
 	config   config
-	mail     MailConfig
 	services service.Services
 	ws       *ws.Hub
 	logger   zap.SugaredLogger
+	mailer   mailer.Client
 }
 
 type config struct {
@@ -28,6 +29,7 @@ type config struct {
 	DB      DBConfig
 	ENV     string
 	Upgrade websocket.Upgrader
+	mail    MailConfig
 	apiURL  string
 }
 
@@ -43,7 +45,16 @@ type DBConfig struct {
 }
 
 type MailConfig struct {
-	exp time.Duration
+	mailtrap  mailtrapConfig
+	fromEmail string
+	exp       time.Duration
+}
+
+type mailtrapConfig struct {
+	host     string
+	port     int
+	username string
+	password string
 }
 
 var Upgrader = websocket.Upgrader{
@@ -102,6 +113,7 @@ func (app *application) mount() *chi.Mux {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", app.GetUserHandler)
+			r.Get("/activate/{token}", app.activateUserHandler)
 			r.Put("/activate/{token}", app.activateUserHandler)
 
 			r.Route("/authentication", func(r chi.Router) {

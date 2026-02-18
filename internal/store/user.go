@@ -117,14 +117,13 @@ func (s *UserStore) GetUserByToken(ctx context.Context, token string) (*User, er
 	query := `SELECT u.id, u.username, u.email, u.created_at, u.is_active 
               FROM users AS u 
               JOIN user_invitations AS ui ON ui.user_id = u.id
-              WHERE ui.token = $1;`
+              WHERE ui.token = $1 AND ui.expiry > $2;`
 
 	var u User
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
-	// QueryRowContext ishlatamiz, chunki bizga 1 ta user kerak
-	err := s.db.QueryRowContext(ctx, query, token).Scan(
+	err := s.db.QueryRowContext(ctx, query, token, time.Now()).Scan(
 		&u.ID,
 		&u.UserName,
 		&u.Email,
@@ -134,7 +133,7 @@ func (s *UserStore) GetUserByToken(ctx context.Context, token string) (*User, er
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, SqlNotfound // O'zingiz yaratgan xato
+			return nil, SqlNotfound
 		}
 		return nil, err
 	}
@@ -166,7 +165,7 @@ func (s *UserStore) Update(ctx context.Context, user *User) error {
 }
 
 func (s *UserStore) Clean(ctx context.Context, token string) error {
-	query := `DELETE FROM User_invitations WHERE token = $1`
+	query := `DELETE FROM user_invitations WHERE token = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()

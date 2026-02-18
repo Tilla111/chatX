@@ -1,0 +1,90 @@
+{{define "subject"}}Finish Registration with ChatX{{end}}
+
+{{define "body"}}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Email mijozlari uchun maxsus moslashuvchanlik */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #2aabee 0%, #229ed9 100%); /* Telegram ko'k rangi */
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        .header img {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); /* Nozik fon nakshi */
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color: #2481cc;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 25px;
+            box-shadow: 0 4px 10px rgba(36, 129, 204, 0.3);
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin:0; font-size: 28px;">ChatX</h1>
+            <p style="margin:5px 0 0 0; opacity: 0.9;">Hush kelibsiz, kelajak muloqotiga!</p>
+        </div>
+
+        <div class="content">
+            <h2 style="margin-top:0;">Salom, {{.Username}}!</h2>
+            <p>ChatX loyihasida ro'yxatdan o'tganingizdan xursandmiz. Biz sizni jamoamizda ko'rishni intiqlik bilan kutdik.</p>
+            <p>Akkauntingizni faollashtirish va barcha imkoniyatlardan foydalanish uchun quyidagi tugmani bosing:</p>
+            
+            <center>
+                <a href="{{.ActivationURL}}" class="btn">Akkauntni faollashtirish</a>
+            </center>
+
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Agar tugma ishlamasa, ushbu havolani nusxalab brauzerga qo'ying: <br>
+                <span style="color: #2481cc;">{{.ActivationURL}}</span>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Bu xat avtomatik tarzda yuborildi. Iltimos, unga javob bermang.<br>
+            © 2026 ChatX Team. Barcha huquqlar himoyalangan.</p>
+        </div>
+    </div>
+</body>
+</html>
+{{end}}

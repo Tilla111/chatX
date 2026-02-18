@@ -58,15 +58,13 @@ func (s *UserSrvc) RegisterUser(ctx context.Context, user RequestRegister, exp t
 			return err
 		}
 
-		//sendEmail
-
 		return nil
 	})
 	if err != nil {
 		return "", err
 	}
 
-	return plaintoken, err
+	return plaintoken, nil
 }
 
 func (s *UserSrvc) UserActivate(ctx context.Context, token string) error {
@@ -96,7 +94,7 @@ func (s *UserSrvc) UserActivate(ctx context.Context, token string) error {
 		return err
 	}
 
-	return err
+	return nil
 
 }
 

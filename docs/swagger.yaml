@@ -820,16 +820,91 @@ paths:
       summary: Foydalanuvchilar ro'yxati
       tags:
       - users
+  /users/activate/{token}:
+    get:
+      description: |-
+        Foydalanuvchi emailiga yuborilgan activation linkdagi token orqali accountni faollashtiradi.
+        Frontend tokenni URL path orqali yuboradi: `/api/v1/users/activate/{token}`.
+        Bu endpoint body qabul qilmaydi, faqat path param token kerak bo'ladi.
+        Token bir martalik: account faollashgandan keyin token o'chiriladi.
+        Token noto'g'ri, eskirgan yoki allaqachon ishlatilgan bo'lsa 400 qaytadi.
+        Frontend emaildagi linkdan to'g'ridan-to'g'ri ochish uchun `GET`, API style chaqiriq uchun `PUT` ishlatishi mumkin.
+      parameters:
+      - description: Emailga yuborilgan activation token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"data":{"message":"account activated successfully"}}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: '{"error":"activation token is required | Not found"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{"error":"internal server error"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Accountni aktivatsiya qilish
+      tags:
+      - users
+    put:
+      description: |-
+        Foydalanuvchi emailiga yuborilgan activation linkdagi token orqali accountni faollashtiradi.
+        Frontend tokenni URL path orqali yuboradi: `/api/v1/users/activate/{token}`.
+        Bu endpoint body qabul qilmaydi, faqat path param token kerak bo'ladi.
+        Token bir martalik: account faollashgandan keyin token o'chiriladi.
+        Token noto'g'ri, eskirgan yoki allaqachon ishlatilgan bo'lsa 400 qaytadi.
+        Frontend emaildagi linkdan to'g'ridan-to'g'ri ochish uchun `GET`, API style chaqiriq uchun `PUT` ishlatishi mumkin.
+      parameters:
+      - description: Emailga yuborilgan activation token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"data":{"message":"account activated successfully"}}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: '{"error":"activation token is required | Not found"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: '{"error":"internal server error"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Accountni aktivatsiya qilish
+      tags:
+      - users
   /users/authentication:
     post:
       consumes:
       - application/json
       description: |-
-        Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun token qaytaradi.
+        Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun email yuboradi.
         Frontend faqat `username`, `email`, `password` maydonlarini yuborishi kerak.
         Validation qoidalari: `username` (required, max 50), `email` (required, email format, max 72), `password` (required).
         Body'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (`readJSON` unknown fieldlarni rad etadi).
-        Muvaffaqiyatli javob formati: `{"data":"<activation_token>"}`. Xatolik formati: `{"error":"<message>"}`.
+        Muvaffaqiyatli javob formati: `{"data":{"message":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
       parameters:
       - description: Registration payload
         in: body
@@ -841,10 +916,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: '{"data":"2f1a2e89-5e5f-4f73-8abf-2f3dca9f7b71"}'
+          description: '{"data":{"message":"registration successful"}}'
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Body/validation xatosi yoki email/username band

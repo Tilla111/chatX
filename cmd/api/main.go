@@ -3,6 +3,7 @@ package main
 import (
 	"chatX/internal/db"
 	"chatX/internal/env"
+	"chatX/internal/mailer"
 	"chatX/internal/store"
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
@@ -58,6 +59,16 @@ func main() {
 		ENV:     cfgEnv.App.ENV,
 		Upgrade: Upgrader,
 		apiURL:  cfgEnv.App.APIURL,
+		mail: MailConfig{
+			mailtrap: mailtrapConfig{
+				host:     cfgEnv.Email.Host,
+				port:     cfgEnv.Email.Port,
+				username: cfgEnv.Email.Username,
+				password: cfgEnv.Email.Password,
+			},
+			fromEmail: cfgEnv.Email.FromEmail,
+			exp:       time.Hour * 24 * 3, //3 Days
+		},
 	}
 
 	logger := *zap.Must(zap.NewProduction()).Sugar()
@@ -88,15 +99,20 @@ func main() {
 
 	storage := store.NewStorage(db)
 	services := service.NewServices(storage)
+	mailer := mailer.NewMailtrap(
+		cfg.mail.mailtrap.host,
+		cfg.mail.mailtrap.port,
+		cfg.mail.mailtrap.username,
+		cfg.mail.mailtrap.password,
+		cfg.mail.fromEmail,
+	)
 
 	app := &application{
 		config:   cfg,
 		services: *services,
 		ws:       hub,
 		logger:   logger,
-		mail: MailConfig{
-			exp: time.Hour * 24 * 3, //3 Days
-		},
+		mailer:   mailer,
 	}
 
 	handler := app.mount()

@@ -18,3 +18,10 @@ database:
   max_open_conns: 9
   max_idle_conns: 6
   max_idle_time: 15m
+
+email:
+  host: "sandbox.smtp.mailtrap.io"
+  port: 2525
+  username: "4ffa30e68273f7"
+  password: "268f9adca7e33e"
+  fromEmail: "jayhun231@gmail.com"
