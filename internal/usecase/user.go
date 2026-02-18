@@ -69,6 +69,37 @@ func (s *UserSrvc) RegisterUser(ctx context.Context, user RequestRegister, exp t
 	return plaintoken, err
 }
 
+func (s *UserSrvc) UserActivate(ctx context.Context, token string) error {
+
+	err := s.repo.UnitOfWork.Do(ctx, func(ctx context.Context, repos *store.Storage) error {
+
+		hash := sha256.Sum256([]byte(token))
+		hashedToken := hex.EncodeToString(hash[:])
+
+		user, err := repos.UserStore.GetUserByToken(ctx, hashedToken)
+		if err != nil {
+			return err
+		}
+
+		user.IsActive = true
+		if err := repos.UserStore.Update(ctx, user); err != nil {
+			return err
+		}
+
+		if err := repos.UserStore.Clean(ctx, hashedToken); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return err
+
+}
+
 func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error) {
 
 	var users []User

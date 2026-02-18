@@ -3,6 +3,8 @@ package main
 import (
 	"chatX/internal/store"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // GetUserHandler godoc
@@ -50,5 +52,26 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := app.jsonResponse(w, http.StatusOK, users); err != nil {
 		app.internalServerError(w, r, err)
+	}
+}
+
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	token := chi.URLParam(r, "token")
+
+	ctx := r.Context()
+	if err := app.services.UserSrvc.UserActivate(ctx, token); err != nil {
+		switch err {
+		case store.SqlNotfound:
+			app.badRequestError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, nil); err != nil {
+		app.internalServerError(w, r, err)
+		return
 	}
 }

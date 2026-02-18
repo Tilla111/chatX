@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -108,5 +110,79 @@ func (s *UserStore) CreateTokenActivate(ctx context.Context, userID int64, token
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *UserStore) GetUserByToken(ctx context.Context, token string) (*User, error) {
+	query := `SELECT u.id, u.username, u.email, u.created_at, u.is_active 
+              FROM users AS u 
+              JOIN user_invitations AS ui ON ui.user_id = u.id
+              WHERE ui.token = $1;`
+
+	var u User
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	// QueryRowContext ishlatamiz, chunki bizga 1 ta user kerak
+	err := s.db.QueryRowContext(ctx, query, token).Scan(
+		&u.ID,
+		&u.UserName,
+		&u.Email,
+		&u.CreatedAt,
+		&u.IsActive,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, SqlNotfound // O'zingiz yaratgan xato
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
+
+func (s *UserStore) Update(ctx context.Context, user *User) error {
+
+	query := `UPDATE users SET username = $1, email = $2, is_active = $3 WHERE id = $4`
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	result, err := s.db.ExecContext(ctx, query, user.UserName, user.Email, user.IsActive, user.ID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return SqlNotfound
+	}
+
+	return nil
+}
+
+func (s *UserStore) Clean(ctx context.Context, token string) error {
+	query := `DELETE FROM User_invitations WHERE token = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	result, err := s.db.ExecContext(ctx, query, token)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return SqlNotfound
+	}
+
 	return nil
 }

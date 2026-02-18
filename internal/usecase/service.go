@@ -15,6 +15,7 @@ const (
 type Services struct {
 	UserSrvc interface {
 		RegisterUser(ctx context.Context, user RequestRegister, exp time.Duration) (string, error)
+		UserActivate(ctx context.Context, token string) error
 		GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error)
 	}
 

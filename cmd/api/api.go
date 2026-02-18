@@ -102,6 +102,7 @@ func (app *application) mount() *chi.Mux {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", app.GetUserHandler)
+			r.Put("/activate/{token}", app.activateUserHandler)
 
 			r.Route("/authentication", func(r chi.Router) {
 				r.Post("/", app.registerUserHandler)

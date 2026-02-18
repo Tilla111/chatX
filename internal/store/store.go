@@ -31,6 +31,9 @@ type Storage struct {
 		CreateUser(ctx context.Context, User *User) error
 		GetAll(ctx context.Context, currentUserID int, pg *PaginationQuery) ([]User, error)
 		CreateTokenActivate(ctx context.Context, userID int64, token string, exp time.Duration) error
+		GetUserByToken(ctx context.Context, token string) (*User, error)
+		Update(ctx context.Context, user *User) error
+		Clean(ctx context.Context, token string) error
 	}
 
 	Chatstorage interface {
