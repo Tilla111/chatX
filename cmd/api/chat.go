@@ -262,6 +262,17 @@ func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), chatID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	memberIDs := make([]string, len(memberUsers))
+	for i, user := range memberUsers {
+		memberIDs[i] = strconv.FormatInt(user.ID, 10)
+	}
+
 	if err := app.services.ChatSRVC.DeleteChat(r.Context(), chatID); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
@@ -271,6 +282,13 @@ func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
+
+	deletedByName := senderID.UserName
+	if deletedByName == "" {
+		deletedByName = "Kimdir"
+	}
+
+	go app.ws.BroadcastChatDelete(int64(chatID), senderID.ID, deletedByName, memberIDs)
 
 	w.WriteHeader(http.StatusNoContent)
 }

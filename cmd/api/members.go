@@ -115,6 +115,38 @@ func (app *application) AddMemberHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	memberUsers, err := app.services.MemberSRV.GetByChatID(r.Context(), chatID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	memberIDs := make([]string, len(memberUsers))
+	addedUsername := ""
+	for i, user := range memberUsers {
+		memberIDs[i] = strconv.FormatInt(user.ID, 10)
+		if user.ID == req.UserID {
+			addedUsername = user.UserName
+		}
+	}
+	if addedUsername == "" {
+		addedUsername = "foydalanuvchi"
+	}
+
+	addedByName := senderID.UserName
+	if addedByName == "" {
+		addedByName = "Kimdir"
+	}
+
+	go app.ws.BroadcastMemberAdded(
+		int64(chatID),
+		req.UserID,
+		senderID.ID,
+		addedUsername,
+		addedByName,
+		memberIDs,
+	)
+
 	if err := app.jsonResponse(w, http.StatusCreated, map[string]any{
 		"result":  "added",
 		"user_id": req.UserID,

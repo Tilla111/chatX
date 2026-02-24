@@ -142,3 +142,37 @@ func (h *Hub) BroadcastMessageDelete(chatID, msgID int64, recipients []string) {
 	}
 	h.broadcastToRecipients(recipients, data)
 }
+
+// BroadcastMemberAdded - groupga yangi a'zo qo'shilganini tarqatadi
+func (h *Hub) BroadcastMemberAdded(chatID, userID, addedByID int64, username, addedByName string, recipients []string) {
+	payload := map[string]interface{}{
+		"type":          "member_added",
+		"chat_id":       chatID,
+		"user_id":       userID,
+		"username":      username,
+		"added_by_id":   addedByID,
+		"added_by_name": addedByName,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	h.broadcastToRecipients(recipients, data)
+}
+
+// BroadcastChatDelete - chat o'chirilganini tarqatadi
+func (h *Hub) BroadcastChatDelete(chatID, deletedByID int64, deletedByName string, recipients []string) {
+	payload := map[string]interface{}{
+		"type":            "chat_deleted",
+		"chat_id":         chatID,
+		"deleted_by_id":   deletedByID,
+		"deleted_by_name": deletedByName,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	h.broadcastToRecipients(recipients, data)
+}

@@ -790,6 +790,54 @@ async function handleSocketEvent(payload) {
     if (hasUpdates) renderMessages(false);
     toast(`${getUserDisplayName(readerID)} xabarlarni o'qidi.`, "info");
   }
+
+  if (type === "member_added") {
+    const chatID = Number(payload.chat_id);
+    const addedUserID = Number(payload.user_id);
+    const addedByID = Number(payload.added_by_id);
+    const addedUsername = normalizeUsername(payload.username) || getUserDisplayName(addedUserID);
+    const addedByName = normalizeUsername(payload.added_by_name) || getUserDisplayName(addedByID);
+
+    await refreshChats();
+
+    if (isModalOpen("membersModal") && state.selectedChatId === chatID) {
+      await openMembersModal();
+    }
+
+    if (addedByID === state.currentUserId) {
+      return;
+    }
+
+    if (addedUserID === state.currentUserId) {
+      toast(`Siz groupga qo'shildingiz (${addedByName} tomonidan).`, "info");
+      return;
+    }
+
+    toast(`${addedByName} ${addedUsername}ni groupga qo'shdi.`, "info");
+  }
+
+  if (type === "chat_deleted") {
+    const chatID = Number(payload.chat_id);
+    const deletedByID = Number(payload.deleted_by_id);
+    const deletedByName = normalizeUsername(payload.deleted_by_name) || getUserDisplayName(deletedByID);
+
+    state.chats = state.chats.filter((chat) => chat.chatId !== chatID);
+    renderChatList();
+
+    if (state.selectedChatId === chatID) {
+      state.selectedChatId = null;
+      state.messages = [];
+      closeModal("membersModal");
+      closeModal("editGroupModal");
+      renderMessages();
+      renderChatMeta();
+      renderComposerState();
+    }
+
+    if (deletedByID !== state.currentUserId) {
+      toast(`${deletedByName} chatni o'chirdi.`, "info");
+    }
+  }
 }
 
 async function loadMemberCandidates(searchTerm) {
@@ -1116,6 +1164,11 @@ function openModal(id) {
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.add("hidden");
+}
+
+function isModalOpen(id) {
+  const modal = document.getElementById(id);
+  return Boolean(modal && !modal.classList.contains("hidden"));
 }
 
 function ensureSession() {
