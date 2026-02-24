@@ -27,18 +27,19 @@ type updateGroupRequest struct {
 }
 
 // CreatePrivateChatHandler godoc
-// @Summary      Private chat yaratish
-// @Description  Ikki foydalanuvchi orasida private chat yaratadi. Agar chat oldin yaratilgan bo'lsa, o'sha chat_id qaytadi.
-// @Tags         chats
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string                       true   "Bearer token: Bearer <token>"
-// @Param        payload    body      createPrivateChatRequest  true   "Private chat uchun receiver ma'lumoti"
-// @Success      201        {object}  map[string]any            "{"data":{"chat_id":12}}"
-// @Failure      400        {object}  map[string]string         "So'rov noto'g'ri"
-// @Failure      401        {object}  map[string]string         "Authorization Bearer token yuborilmagan yoki noto'g'ri"
-// @Failure      500        {object}  map[string]string         "Ichki server xatosi"
-// @Router       /chats [post]
+//
+//	@Summary		Private chat yaratish
+//	@Description	Ikki foydalanuvchi orasida private chat yaratadi. Agar chat oldin yaratilgan bo'lsa, o'sha chat_id qaytadi.
+//	@Tags			chats
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string						true	"Bearer token: Bearer <token>"
+//	@Param			payload			body		createPrivateChatRequest	true	"Private chat uchun receiver ma'lumoti"
+//	@Success		201				{object}	map[string]any				"{"data":{"chat_id":12}}"
+//	@Failure		400				{object}	map[string]string			"So'rov noto'g'ri"
+//	@Failure		401				{object}	map[string]string			"Authorization Bearer token yuborilmagan yoki noto'g'ri"
+//	@Failure		500				{object}	map[string]string			"Ichki server xatosi"
+//	@Router			/chats [post]
 func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request) {
 	senderID, ok := getUserfromContext(r)
 	if !ok {
@@ -74,18 +75,19 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 }
 
 // CreateGroupHandler godoc
-// @Summary      Group chat yaratish
-// @Description  Yangi group chat yaratadi, joriy userni owner qiladi va `member_ids` dagi userlarni qo'shadi.
-// @Tags         groups
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string                 true   "Bearer token: Bearer <token> (owner bo'ladi)"
-// @Param        payload    body      createGroupRequest  true   "Group yaratish ma'lumotlari"
-// @Success      201        {object}  map[string]any      "{"data":{"chat_id":17}}"
-// @Failure      400        {object}  map[string]string   "So'rov noto'g'ri"
-// @Failure      401        {object}  map[string]string   "Authorization Bearer token yuborilmagan yoki noto'g'ri"
-// @Failure      500        {object}  map[string]string   "Ichki server xatosi"
-// @Router       /groups [post]
+//
+//	@Summary		Group chat yaratish
+//	@Description	Yangi group chat yaratadi, joriy userni owner qiladi va `member_ids` dagi userlarni qo'shadi.
+//	@Tags			groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string				true	"Bearer token: Bearer <token> (owner bo'ladi)"
+//	@Param			payload			body		createGroupRequest	true	"Group yaratish ma'lumotlari"
+//	@Success		201				{object}	map[string]any		"{"data":{"chat_id":17}}"
+//	@Failure		400				{object}	map[string]string	"So'rov noto'g'ri"
+//	@Failure		401				{object}	map[string]string	"Authorization Bearer token yuborilmagan yoki noto'g'ri"
+//	@Failure		500				{object}	map[string]string	"Ichki server xatosi"
+//	@Router			/groups [post]
 func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	senderID, ok := getUserfromContext(r)
@@ -129,16 +131,17 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 }
 
 // GetUserChatsHandler godoc
-// @Summary      Joriy user chatlari
-// @Description  Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini qaytaradi.
-// @Tags         chats
-// @Produce      json
-// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
-// @Param        search     query     string             false  "Chat nomi bo'yicha qidiruv"
-// @Success      200        {object}  map[string]any     "{"data":[...chatlar...]}"
-// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
-// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
-// @Router       /chats [get]
+//
+//	@Summary		Joriy user chatlari
+//	@Description	Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini qaytaradi.
+//	@Tags			chats
+//	@Produce		json
+//	@Param			Authorization	header		string				true	"Bearer token: Bearer <token>"
+//	@Param			search			query		string				false	"Chat nomi bo'yicha qidiruv"
+//	@Success		200				{object}	map[string]any		"{"data":[...chatlar...]}"
+//	@Failure		401				{object}	map[string]string	"Authorization Bearer token yuborilmagan yoki noto'g'ri"
+//	@Failure		500				{object}	map[string]string	"Ichki server xatosi"
+//	@Router			/chats [get]
 func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Request) {
 	senderID, ok := getUserfromContext(r)
 	if !ok {
@@ -158,20 +161,21 @@ func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // UpdateChatHandler godoc
-// @Summary      Group ma'lumotlarini yangilash
-// @Description  Berilgan `chat_id` bo'yicha group nomi va description qiymatlarini yangilaydi.
-// @Tags         groups
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string                 true   "Bearer token: Bearer <token>"
-// @Param        chat_id    path      int                 true   "Group chat ID"
-// @Param        payload    body      updateGroupRequest  true   "Yangilanadigan qiymatlar"
-// @Success      200        {object}  map[string]any      "{"data":{"result":"updated"}}"
-// @Failure      400        {object}  map[string]string   "ID yoki body noto'g'ri"
-// @Failure      401        {object}  map[string]string   "Authorization Bearer token yuborilmagan yoki noto'g'ri"
-// @Failure      404        {object}  map[string]string   "Group topilmadi"
-// @Failure      500        {object}  map[string]string   "Ichki server xatosi"
-// @Router       /groups/{chat_id} [patch]
+//
+//	@Summary		Group ma'lumotlarini yangilash
+//	@Description	Berilgan `chat_id` bo'yicha group nomi va description qiymatlarini yangilaydi.
+//	@Tags			groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string				true	"Bearer token: Bearer <token>"
+//	@Param			chat_id			path		int					true	"Group chat ID"
+//	@Param			payload			body		updateGroupRequest	true	"Yangilanadigan qiymatlar"
+//	@Success		200				{object}	map[string]any		"{"data":{"result":"updated"}}"
+//	@Failure		400				{object}	map[string]string	"ID yoki body noto'g'ri"
+//	@Failure		401				{object}	map[string]string	"Authorization Bearer token yuborilmagan yoki noto'g'ri"
+//	@Failure		404				{object}	map[string]string	"Group topilmadi"
+//	@Failure		500				{object}	map[string]string	"Ichki server xatosi"
+//	@Router			/groups/{chat_id} [patch]
 func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request) {
 	senderID, ok := getUserfromContext(r)
 	if !ok {
@@ -229,17 +233,18 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 }
 
 // DeleteChatHandler godoc
-// @Summary      Chatni o'chirish
-// @Description  Berilgan `chat_id` bo'yicha chatni o'chiradi.
-// @Tags         chats
-// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
-// @Param        chat_id    path      int                true   "Chat ID"
-// @Success      204        "Muvaffaqiyatli o'chirildi"
-// @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
-// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
-// @Failure      404        {object}  map[string]string  "Chat topilmadi"
-// @Failure      500        {object}  map[string]string  "Ichki server xatosi"
-// @Router       /chats/{chat_id} [delete]
+//
+//	@Summary		Chatni o'chirish
+//	@Description	Berilgan `chat_id` bo'yicha chatni o'chiradi.
+//	@Tags			chats
+//	@Param			Authorization	header	string	true	"Bearer token: Bearer <token>"
+//	@Param			chat_id			path	int		true	"Chat ID"
+//	@Success		204				"Muvaffaqiyatli o'chirildi"
+//	@Failure		400				{object}	map[string]string	"chat_id noto'g'ri"
+//	@Failure		401				{object}	map[string]string	"Authorization Bearer token yuborilmagan yoki noto'g'ri"
+//	@Failure		404				{object}	map[string]string	"Chat topilmadi"
+//	@Failure		500				{object}	map[string]string	"Ichki server xatosi"
+//	@Router			/chats/{chat_id} [delete]
 func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request) {
 	senderID, ok := getUserfromContext(r)
 	if !ok {

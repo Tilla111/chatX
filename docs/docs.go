@@ -36,9 +36,9 @@ const docTemplate = `{
                 "summary": "Joriy user chatlari",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -58,7 +58,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -91,9 +91,9 @@ const docTemplate = `{
                 "summary": "Private chat yaratish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -125,7 +125,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -154,9 +154,9 @@ const docTemplate = `{
                 "summary": "Chatni o'chirish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -182,7 +182,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -223,9 +223,9 @@ const docTemplate = `{
                 "summary": "Chat xabarlarini olish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -255,7 +255,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -299,9 +299,9 @@ const docTemplate = `{
                 "summary": "Group chat yaratish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi (owner bo'ladi)",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e (owner bo'ladi)",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -333,7 +333,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -368,9 +368,9 @@ const docTemplate = `{
                 "summary": "Group ma'lumotlarini yangilash",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -409,7 +409,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -450,9 +450,9 @@ const docTemplate = `{
                 "summary": "Chat a'zolarini olish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -482,7 +482,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -524,9 +524,9 @@ const docTemplate = `{
                 "summary": "Groupga a'zo qo'shish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Amalni bajarayotgan foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -565,7 +565,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -612,9 +612,9 @@ const docTemplate = `{
                 "summary": "A'zoni groupdan chiqarish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Amalni bajarayotgan foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -647,7 +647,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -732,9 +732,9 @@ const docTemplate = `{
                 "summary": "Xabar yuborish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -766,7 +766,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -807,9 +807,9 @@ const docTemplate = `{
                 "summary": "Chatdagi xabarlarni o'qilgan deb belgilash",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -839,7 +839,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -880,9 +880,9 @@ const docTemplate = `{
                 "summary": "Xabarni o'chirish",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -912,7 +912,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -954,9 +954,9 @@ const docTemplate = `{
                 "summary": "Xabarni tahrirlash",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -995,7 +995,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1036,9 +1036,9 @@ const docTemplate = `{
                 "summary": "Foydalanuvchilar ro'yxati",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Joriy foydalanuvchi IDsi",
-                        "name": "X-User-ID",
+                        "type": "string",
+                        "description": "Bearer token: Bearer \u003ctoken\u003e",
+                        "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
@@ -1081,7 +1081,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "X-User-ID yuborilmagan yoki noto'g'ri",
+                        "description": "Authorization Bearer token yuborilmagan yoki noto'g'ri",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1364,9 +1364,9 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "ApiKeyAuth": {
-            "description": "Joriy foydalanuvchi IDsi (demo auth uchun)",
+            "description": "Bearer JWT token: ` + "`" + `Bearer \u003ctoken\u003e` + "`" + `",
             "type": "apiKey",
-            "name": "X-User-ID",
+            "name": "Authorization",
             "in": "header"
         }
     }

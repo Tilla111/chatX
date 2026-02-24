@@ -31,20 +31,21 @@ func (app *application) buildActivationURL(token string) string {
 }
 
 // registerUserHandler godoc
-// @Summary      Foydalanuvchini ro'yxatdan o'tkazish
-// @Description  Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun email yuboradi.
-// @Description  Frontend faqat `username`, `email`, `password` maydonlarini yuborishi kerak.
-// @Description  Validation qoidalari: `username` (required, max 50), `email` (required, email format, max 72), `password` (required).
-// @Description  Body'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (`readJSON` unknown fieldlarni rad etadi).
-// @Description  Muvaffaqiyatli javob formati: `{"data":{"message":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
-// @Tags         authentication
-// @Accept       json
-// @Produce      json
-// @Param        payload  body      service.RequestRegister  true  "Registration payload"
-// @Success      201      {object}  map[string]any           "{"data":{"message":"registration successful"}}"
-// @Failure      400      {object}  map[string]string        "Body/validation xatosi yoki email/username band"
-// @Failure      500      {object}  map[string]string        "Ichki server xatosi"
-// @Router       /users/authentication [post]
+//
+//	@Summary		Foydalanuvchini ro'yxatdan o'tkazish
+//	@Description	Yangi foydalanuvchi yaratadi va accountni aktivatsiya qilish uchun email yuboradi.
+//	@Description	Frontend faqat `username`, `email`, `password` maydonlarini yuborishi kerak.
+//	@Description	Validation qoidalari: `username` (required, max 50), `email` (required, email format, max 72), `password` (required).
+//	@Description	Body'da noma'lum field bo'lsa yoki JSON noto'g'ri bo'lsa 400 qaytadi (`readJSON` unknown fieldlarni rad etadi).
+//	@Description	Muvaffaqiyatli javob formati: `{"data":{"message":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		service.RequestRegister	true								"Registration payload"
+//	@Success		201		{object}	map[string]any			"{"data":{"message":"registration	successful"}}"
+//	@Failure		400		{object}	map[string]string		"Body/validation xatosi yoki email/username band"
+//	@Failure		500		{object}	map[string]string		"Ichki server xatosi"
+//	@Router			/users/authentication [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req service.RequestRegister
@@ -104,19 +105,19 @@ type RequestCreateToken struct {
 }
 
 // createTokenHandler godoc
-// @Summary      Token yaratish
-// @Description  Foydalanuvchi email va parol asosida token yaratadi.
-// @Description  Body'da `email` va `password` maydonlari bo'lishi kerak. Validation qoidalari: har ikkalasi ham required.
-// @Description  Muvaffaqiyatli javob formati: `{"data":{"token":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
-// @Tags         authentication
-// @Accept       json
-// @Produce      json
-// @Param        payload  body      RequestCreateToken  true  "Token yaratish payload"
-// @Success      200      {object}  map[string]any     "{"data":{"token":"..."}}"
-// @Failure      400      {object}  map[string]string  "Body/validation xatosi"
-// @Failure      401      {object}  map[string]string  "Noto'g'ri username yoki parol"
-// @Failure      500      {object}  map[string]string  "Ichki server xatosi"
-// @Router       /users/authentication/token [post]
+//	@Summary		Token yaratish
+//	@Description	Foydalanuvchi email va parol asosida token yaratadi.
+//	@Description	Body'da `email` va `password` maydonlari bo'lishi kerak. Validation qoidalari: har ikkalasi ham required.
+//	@Description	Muvaffaqiyatli javob formati: `{"data":{"token":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		RequestCreateToken	true	"Token yaratish payload"
+//	@Success		200		{object}	map[string]any		"{"data":{"token":"..."}}"
+//	@Failure		400		{object}	map[string]string	"Body/validation xatosi"
+//	@Failure		401		{object}	map[string]string	"Noto'g'ri username yoki parol"
+//	@Failure		500		{object}	map[string]string	"Ichki server xatosi"
+//	@Router			/users/authentication/token [post]
 
 func (app *application) CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
 	var req RequestCreateToken

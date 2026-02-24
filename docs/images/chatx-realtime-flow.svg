@@ -1,0 +1,73 @@
+<svg width="1500" height="860" viewBox="0 0 1500 860" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">ChatX realtime flow</title>
+  <desc id="desc">Message yuborish va websocket broadcast oqimi</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#0F172A" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect width="1500" height="860" fill="#F8FAFC"/>
+  <text x="52" y="68" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#0F172A">ChatX Realtime Flow</text>
+  <text x="52" y="104" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#334155">Message CRUD va read status eventlarini WebSocket orqali tarqatish</text>
+
+  <g filter="url(#shadow)">
+    <rect x="76" y="186" width="260" height="160" rx="16" ry="16" fill="#E0F2FE" stroke="#0EA5E9"/>
+    <text x="206" y="238" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#0C4A6E">Client A</text>
+    <text x="206" y="276" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#075985">Sender (REST + WS)</text>
+    <text x="206" y="304" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#075985">JWT user</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="622" y="154" width="288" height="224" rx="18" ry="18" fill="#FFFFFF" stroke="#64748B"/>
+    <text x="766" y="214" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#0F172A">API + WS Hub</text>
+    <text x="766" y="252" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#334155">Message create/update/delete</text>
+    <text x="766" y="282" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#334155">Member checks</text>
+    <text x="766" y="312" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" fill="#334155">Targeted broadcast</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1088" y="186" width="260" height="160" rx="16" ry="16" fill="#DBEAFE" stroke="#3B82F6"/>
+    <text x="1218" y="238" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#1E3A8A">Client B</text>
+    <text x="1218" y="276" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1D4ED8">Receiver (WS)</text>
+    <text x="1218" y="304" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1D4ED8">Same chat member</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="622" y="444" width="288" height="142" rx="18" ry="18" fill="#ECFDF5" stroke="#10B981"/>
+    <text x="766" y="496" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#065F46">PostgreSQL</text>
+    <text x="766" y="530" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#047857">messages / message_reads</text>
+    <text x="766" y="556" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#047857">chat_members</text>
+  </g>
+
+  <g stroke="#334155" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M336 246 L622 246"/>
+    <path d="M910 246 L1088 246"/>
+    <path d="M766 378 L766 444"/>
+    <path d="M666 444 C512 392 398 360 336 328"/>
+    <path d="M866 444 C1020 392 1128 360 1188 328"/>
+  </g>
+
+  <text x="432" y="228" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1E293B">POST /messages</text>
+  <text x="954" y="228" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1E293B">WS event push</text>
+  <text x="784" y="420" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1E293B">persist</text>
+  <text x="430" y="394" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1E293B">ack / refresh</text>
+  <text x="1056" y="394" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#1E293B">deliver</text>
+
+  <g filter="url(#shadow)">
+    <rect x="76" y="624" width="1272" height="176" rx="18" ry="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <text x="110" y="668" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#0F172A">WebSocket event turlari</text>
+    <text x="110" y="706" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#334155">
+      new_message | message_updated | message_deleted | messages_read | member_added | chat_deleted
+    </text>
+    <text x="110" y="742" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#475569">
+      Eventlar faqat tegishli recipient user ID lariga yuboriladi (targeted broadcast).
+    </text>
+    <text x="110" y="770" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#475569">
+      Read status uchun senderdan tashqari qolgan userlarga alohida xabar yuboriladi.
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,52 @@
+<svg width="1600" height="560" viewBox="0 0 1600 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">ChatX cover</title>
+  <desc id="desc">ChatX loyiha banneri</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="45%" stop-color="#0B3A6D"/>
+      <stop offset="100%" stop-color="#0891B2"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="100%" stop-color="#BAE6FD"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#082F49" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="560" fill="url(#bg)"/>
+
+  <circle cx="1360" cy="120" r="180" fill="#22D3EE" opacity="0.18"/>
+  <circle cx="1460" cy="460" r="220" fill="#67E8F9" opacity="0.16"/>
+  <circle cx="180" cy="480" r="140" fill="#22D3EE" opacity="0.14"/>
+
+  <g transform="translate(110,96)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="28" ry="28" width="1380" height="368" fill="#0B1220" fill-opacity="0.48" stroke="#67E8F9" stroke-opacity="0.35"/>
+    <text x="72" y="130" font-family="Segoe UI, Arial, sans-serif" font-size="94" font-weight="700" fill="#F8FAFC">ChatX</text>
+    <text x="72" y="186" font-family="Segoe UI, Arial, sans-serif" font-size="32" fill="#BAE6FD">
+      JWT + WebSocket asosidagi real-time chat backend
+    </text>
+    <text x="72" y="238" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#E0F2FE">
+      Go (Chi) | PostgreSQL | Mailtrap Activation | Swagger | Built-in Workspace UI
+    </text>
+
+    <g transform="translate(72,276)">
+      <rect x="0" y="0" rx="16" ry="16" width="166" height="46" fill="url(#chip)"/>
+      <text x="83" y="30" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#0C4A6E">Go + Chi</text>
+
+      <rect x="184" y="0" rx="16" ry="16" width="172" height="46" fill="url(#chip)"/>
+      <text x="270" y="30" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#0C4A6E">PostgreSQL</text>
+
+      <rect x="374" y="0" rx="16" ry="16" width="124" height="46" fill="url(#chip)"/>
+      <text x="436" y="30" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#0C4A6E">JWT</text>
+
+      <rect x="516" y="0" rx="16" ry="16" width="166" height="46" fill="url(#chip)"/>
+      <text x="599" y="30" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#0C4A6E">WebSocket</text>
+
+      <rect x="700" y="0" rx="16" ry="16" width="146" height="46" fill="url(#chip)"/>
+      <text x="773" y="30" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" fill="#0C4A6E">Swagger</text>
+    </g>
+  </g>
+</svg>

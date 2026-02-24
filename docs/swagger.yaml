@@ -93,11 +93,11 @@ paths:
       description: Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini
         qaytaradi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Chat nomi bo'yicha qidiruv
         in: query
         name: search
@@ -111,7 +111,7 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -131,11 +131,11 @@ paths:
       description: Ikki foydalanuvchi orasida private chat yaratadi. Agar chat oldin
         yaratilgan bo'lsa, o'sha chat_id qaytadi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Private chat uchun receiver ma'lumoti
         in: body
         name: payload
@@ -157,7 +157,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -175,11 +175,11 @@ paths:
     delete:
       description: Berilgan `chat_id` bo'yicha chatni o'chiradi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Chat ID
         in: path
         name: chat_id
@@ -195,7 +195,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -220,11 +220,11 @@ paths:
       description: Berilgan chatdagi xabarlar tarixini qaytaradi. Faqat chat a'zosi
         ko'ra oladi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Chat ID
         in: path
         name: chat_id
@@ -245,7 +245,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -272,11 +272,11 @@ paths:
       description: Yangi group chat yaratadi, joriy userni owner qiladi va `member_ids`
         dagi userlarni qo'shadi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi (owner bo'ladi)
+      - description: 'Bearer token: Bearer <token> (owner bo''ladi)'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Group yaratish ma'lumotlari
         in: body
         name: payload
@@ -298,7 +298,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -319,11 +319,11 @@ paths:
       description: Berilgan `chat_id` bo'yicha group nomi va description qiymatlarini
         yangilaydi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Group chat ID
         in: path
         name: chat_id
@@ -350,7 +350,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -375,11 +375,11 @@ paths:
       description: Groupdan userni chiqaradi. O'zini chiqarish mumkin, boshqa userni
         esa owner/admin chiqara oladi.
       parameters:
-      - description: Amalni bajarayotgan foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Group chat ID
         in: path
         name: chat_id
@@ -400,7 +400,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -431,11 +431,11 @@ paths:
       description: Berilgan group chat uchun a'zolar ro'yxatini qaytaradi. Faqat chat
         a'zosi ko'ra oladi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Group chat ID
         in: path
         name: chat_id
@@ -456,7 +456,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -482,11 +482,11 @@ paths:
       description: Group chatga yangi a'zo qo'shadi. Amalni faqat owner yoki admin
         bajarishi mumkin.
       parameters:
-      - description: Amalni bajarayotgan foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Group chat ID
         in: path
         name: chat_id
@@ -513,7 +513,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -567,11 +567,11 @@ paths:
       - application/json
       description: Joriy foydalanuvchi berilgan chatga yangi xabar yuboradi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Xabar yuborish ma'lumotlari
         in: body
         name: payload
@@ -593,7 +593,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -617,11 +617,11 @@ paths:
     delete:
       description: Joriy foydalanuvchi o'zi yuborgan xabarni o'chiradi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Xabar ID
         in: path
         name: id
@@ -642,7 +642,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -667,11 +667,11 @@ paths:
       - application/json
       description: Joriy foydalanuvchi o'zi yuborgan xabar matnini yangilaydi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Xabar ID
         in: path
         name: id
@@ -698,7 +698,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -723,11 +723,11 @@ paths:
       description: Joriy foydalanuvchi uchun berilgan chatdagi barcha kiruvchi xabarlarni
         o'qilgan holatiga o'tkazadi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - description: Chat ID
         in: path
         name: chat_id
@@ -748,7 +748,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -772,11 +772,11 @@ paths:
     get:
       description: Joriy userdan tashqari userlarni pagination va search bilan qaytaradi.
       parameters:
-      - description: Joriy foydalanuvchi IDsi
+      - description: 'Bearer token: Bearer <token>'
         in: header
-        name: X-User-ID
+        name: Authorization
         required: true
-        type: integer
+        type: string
       - default: 20
         description: Sahifadagi element soni (1..20)
         in: query
@@ -806,7 +806,7 @@ paths:
               type: string
             type: object
         "401":
-          description: X-User-ID yuborilmagan yoki noto'g'ri
+          description: Authorization Bearer token yuborilmagan yoki noto'g'ri
           schema:
             additionalProperties:
               type: string
@@ -937,8 +937,8 @@ paths:
       - authentication
 securityDefinitions:
   ApiKeyAuth:
-    description: Joriy foydalanuvchi IDsi (demo auth uchun)
+    description: 'Bearer JWT token: `Bearer <token>`'
     in: header
-    name: X-User-ID
+    name: Authorization
     type: apiKey
 swagger: "2.0"

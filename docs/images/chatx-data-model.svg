@@ -1,0 +1,107 @@
+<svg width="1600" height="980" viewBox="0 0 1600 980" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">ChatX data model</title>
+  <desc id="desc">ChatX jadval aloqalari diagrammasi</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="980" fill="#F8FAFC"/>
+  <text x="52" y="66" font-family="Segoe UI, Arial, sans-serif" font-size="36" font-weight="700" fill="#0F172A">ChatX Data Model</text>
+  <text x="52" y="102" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#334155">Asosiy PostgreSQL jadvallari va bog'lanishlar</text>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="176" width="360" height="256" rx="14" ry="14" fill="#FFFFFF" stroke="#3B82F6"/>
+    <rect x="70" y="176" width="360" height="50" rx="14" ry="14" fill="#DBEAFE"/>
+    <text x="250" y="208" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#1E3A8A">users</text>
+    <text x="90" y="252" font-family="Consolas, monospace" font-size="18" fill="#1F2937">id (PK)</text>
+    <text x="90" y="284" font-family="Consolas, monospace" font-size="18" fill="#1F2937">username (unique)</text>
+    <text x="90" y="316" font-family="Consolas, monospace" font-size="18" fill="#1F2937">email (unique, citext)</text>
+    <text x="90" y="348" font-family="Consolas, monospace" font-size="18" fill="#1F2937">password (bytea)</text>
+    <text x="90" y="380" font-family="Consolas, monospace" font-size="18" fill="#1F2937">is_active (bool)</text>
+    <text x="90" y="412" font-family="Consolas, monospace" font-size="18" fill="#1F2937">created_at</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="496" width="360" height="188" rx="14" ry="14" fill="#FFFFFF" stroke="#0EA5E9"/>
+    <rect x="70" y="496" width="360" height="50" rx="14" ry="14" fill="#E0F2FE"/>
+    <text x="250" y="528" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#0C4A6E">user_invitations</text>
+    <text x="90" y="572" font-family="Consolas, monospace" font-size="18" fill="#1F2937">token (PK)</text>
+    <text x="90" y="604" font-family="Consolas, monospace" font-size="18" fill="#1F2937">user_id (FK -> users.id)</text>
+    <text x="90" y="636" font-family="Consolas, monospace" font-size="18" fill="#1F2937">expiry</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="620" y="176" width="320" height="184" rx="14" ry="14" fill="#FFFFFF" stroke="#10B981"/>
+    <rect x="620" y="176" width="320" height="50" rx="14" ry="14" fill="#D1FAE5"/>
+    <text x="780" y="208" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#065F46">chats</text>
+    <text x="640" y="252" font-family="Consolas, monospace" font-size="18" fill="#1F2937">id (PK)</text>
+    <text x="640" y="284" font-family="Consolas, monospace" font-size="18" fill="#1F2937">chat_type (private/group)</text>
+    <text x="640" y="316" font-family="Consolas, monospace" font-size="18" fill="#1F2937">created_at</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="520" y="424" width="520" height="248" rx="14" ry="14" fill="#FFFFFF" stroke="#34D399"/>
+    <rect x="520" y="424" width="520" height="50" rx="14" ry="14" fill="#ECFDF5"/>
+    <text x="780" y="456" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#065F46">chat_members</text>
+    <text x="542" y="500" font-family="Consolas, monospace" font-size="18" fill="#1F2937">id (PK)</text>
+    <text x="542" y="532" font-family="Consolas, monospace" font-size="18" fill="#1F2937">chat_id (FK -> chats.id)</text>
+    <text x="542" y="564" font-family="Consolas, monospace" font-size="18" fill="#1F2937">user_id (FK -> users.id)</text>
+    <text x="542" y="596" font-family="Consolas, monospace" font-size="18" fill="#1F2937">rol (owner/admin/member)</text>
+    <text x="542" y="628" font-family="Consolas, monospace" font-size="18" fill="#1F2937">joined_at</text>
+    <text x="542" y="660" font-family="Consolas, monospace" font-size="18" fill="#1F2937">unique(chat_id, user_id)</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1120" y="176" width="390" height="186" rx="14" ry="14" fill="#FFFFFF" stroke="#22C55E"/>
+    <rect x="1120" y="176" width="390" height="50" rx="14" ry="14" fill="#DCFCE7"/>
+    <text x="1315" y="208" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#14532D">group_info</text>
+    <text x="1142" y="252" font-family="Consolas, monospace" font-size="18" fill="#1F2937">id (PK)</text>
+    <text x="1142" y="284" font-family="Consolas, monospace" font-size="18" fill="#1F2937">chat_id (FK, unique)</text>
+    <text x="1142" y="316" font-family="Consolas, monospace" font-size="18" fill="#1F2937">group_name, group_description</text>
+    <text x="1142" y="348" font-family="Consolas, monospace" font-size="18" fill="#1F2937">created_at, updated_at</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1120" y="424" width="390" height="250" rx="14" ry="14" fill="#FFFFFF" stroke="#F59E0B"/>
+    <rect x="1120" y="424" width="390" height="50" rx="14" ry="14" fill="#FEF3C7"/>
+    <text x="1315" y="456" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#78350F">messages</text>
+    <text x="1142" y="500" font-family="Consolas, monospace" font-size="18" fill="#1F2937">id (PK)</text>
+    <text x="1142" y="532" font-family="Consolas, monospace" font-size="18" fill="#1F2937">chat_id (FK -> chats.id)</text>
+    <text x="1142" y="564" font-family="Consolas, monospace" font-size="18" fill="#1F2937">sender_id (FK -> users.id)</text>
+    <text x="1142" y="596" font-family="Consolas, monospace" font-size="18" fill="#1F2937">message_text</text>
+    <text x="1142" y="628" font-family="Consolas, monospace" font-size="18" fill="#1F2937">is_read (legacy field)</text>
+    <text x="1142" y="660" font-family="Consolas, monospace" font-size="18" fill="#1F2937">created_at, updated_at</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1120" y="718" width="390" height="188" rx="14" ry="14" fill="#FFFFFF" stroke="#FB7185"/>
+    <rect x="1120" y="718" width="390" height="50" rx="14" ry="14" fill="#FFE4E6"/>
+    <text x="1315" y="750" text-anchor="middle" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#9F1239">message_reads</text>
+    <text x="1142" y="794" font-family="Consolas, monospace" font-size="18" fill="#1F2937">message_id (FK -> messages.id)</text>
+    <text x="1142" y="826" font-family="Consolas, monospace" font-size="18" fill="#1F2937">user_id (FK -> users.id)</text>
+    <text x="1142" y="858" font-family="Consolas, monospace" font-size="18" fill="#1F2937">read_at</text>
+    <text x="1142" y="890" font-family="Consolas, monospace" font-size="18" fill="#1F2937">PK(message_id, user_id)</text>
+  </g>
+
+  <g stroke="#334155" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M430 560 L520 560"/>
+    <path d="M250 432 L250 496"/>
+    <path d="M430 250 L620 250"/>
+    <path d="M940 250 L1120 250"/>
+    <path d="M940 300 L1148 424"/>
+    <path d="M1315 674 L1315 718"/>
+    <path d="M430 300 L520 500"/>
+  </g>
+
+  <text x="446" y="548" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">user_id FK</text>
+  <text x="264" y="468" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">activation</text>
+  <text x="498" y="236" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">memberships</text>
+  <text x="956" y="236" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">group metadata</text>
+  <text x="958" y="346" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">chat messages</text>
+  <text x="1330" y="700" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#334155">read markers</text>
+</svg>
