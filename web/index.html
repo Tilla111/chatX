@@ -6,7 +6,7 @@
   <title>ChatX Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="./style/style.css">
 </head>
@@ -14,11 +14,77 @@
   <div class="ambient ambient-a"></div>
   <div class="ambient ambient-b"></div>
 
-  <div class="app-shell">
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-layout card">
+      <aside class="auth-hero">
+        <p class="hero-kicker">ChatX 2.0</p>
+        <h1>Login va registratsiyani JWT bilan boshqaring</h1>
+        <p>Bir marta kirib, private va group chatlar, real-time xabarlar va a'zo boshqaruvini bitta paneldan ishlating.</p>
+        <ul>
+          <li><i class="fa-solid fa-shield-halved"></i> Authorization: Bearer formatiga to'liq mos</li>
+          <li><i class="fa-solid fa-bolt"></i> WebSocket real-time oqimi</li>
+          <li><i class="fa-solid fa-layer-group"></i> Group, member, message amallari bir joyda</li>
+        </ul>
+      </aside>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="loginTabBtn" class="tab-btn active" type="button">Login</button>
+          <button id="registerTabBtn" class="tab-btn" type="button">Registratsiya</button>
+        </div>
+
+        <p id="authHint" class="auth-hint info">Hisobingiz bo'lsa login qiling, bo'lmasa registratsiyadan o'ting.</p>
+
+        <div id="loginPane" class="auth-pane active">
+          <form id="loginForm" class="auth-form">
+            <label for="loginEmailInput">Email</label>
+            <input id="loginEmailInput" class="text-input" type="email" maxlength="255" required>
+
+            <label for="loginPasswordInput">Parol</label>
+            <input id="loginPasswordInput" class="text-input" type="password" minlength="8" maxlength="72" required>
+
+            <button id="loginSubmitBtn" class="btn primary" type="submit">
+              <i class="fa-solid fa-right-to-bracket"></i> Login
+            </button>
+          </form>
+        </div>
+
+        <div id="registerPane" class="auth-pane">
+          <form id="registerForm" class="auth-form">
+            <label for="registerUsernameInput">Username</label>
+            <input id="registerUsernameInput" class="text-input" type="text" maxlength="50" required>
+
+            <label for="registerEmailInput">Email</label>
+            <input id="registerEmailInput" class="text-input" type="email" maxlength="72" required>
+
+            <label for="registerPasswordInput">Parol</label>
+            <input id="registerPasswordInput" class="text-input" type="password" minlength="8" maxlength="72" required>
+
+            <label for="registerConfirmInput">Parolni tasdiqlang</label>
+            <input id="registerConfirmInput" class="text-input" type="password" minlength="8" maxlength="72" required>
+
+            <button id="registerSubmitBtn" class="btn primary" type="submit">
+              <i class="fa-solid fa-user-plus"></i> Ro'yxatdan o'tish
+            </button>
+          </form>
+        </div>
+
+        <div class="activate-block">
+          <h3>Email aktivatsiya tokeni</h3>
+          <form id="activateForm" class="activate-form">
+            <input id="activationTokenInput" class="text-input" type="text" placeholder="Activation tokenni kiriting">
+            <button class="btn mini" type="submit">Aktivatsiya qilish</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
     <header class="card topbar">
       <div class="brand">
         <h1>ChatX Workspace</h1>
-        <p>Chatlar, guruhlar va xabarlarni bir joydan boshqarish oynasi</p>
+        <p>JWT orqali ulangan real-time chat boshqaruvi</p>
       </div>
 
       <div class="status-strip">
@@ -26,11 +92,10 @@
         <span id="wsBadge" class="pill neutral">WS: uzilgan</span>
       </div>
 
-      <div class="auth-controls">
-        <label for="userIdInput">X-User-ID</label>
-        <input id="userIdInput" type="number" min="1" step="1" placeholder="Masalan: 1">
-        <button id="connectBtn" type="button" class="btn primary">Ulanish</button>
-        <button id="disconnectBtn" type="button" class="btn ghost">Uzish</button>
+      <div class="session-controls">
+        <span id="sessionUserBadge" class="session-badge">User aniqlanmagan</span>
+        <button id="refreshAllBtn" type="button" class="btn mini"><i class="fa-solid fa-rotate"></i> Yangilash</button>
+        <button id="logoutBtn" type="button" class="btn ghost"><i class="fa-solid fa-arrow-right-from-bracket"></i> Chiqish</button>
       </div>
     </header>
 
@@ -39,12 +104,12 @@
         <section class="card action-card">
           <div class="section-head">
             <h2>Amallar</h2>
-            <button id="refreshAllBtn" type="button" class="btn mini">
-              <i class="fa-solid fa-rotate"></i> Yangilash
-            </button>
           </div>
 
           <div class="action-grid">
+            <button id="newPrivateBtn" type="button" class="btn action">
+              <i class="fa-regular fa-message"></i> Private Chat
+            </button>
             <button id="newGroupBtn" type="button" class="btn action">
               <i class="fa-solid fa-user-group"></i> Group Chat
             </button>
