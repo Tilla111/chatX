@@ -518,7 +518,7 @@ function openPrivateModal() {
     users.forEach((user) => {
       const option = document.createElement("option");
       option.value = String(user.id);
-      option.textContent = `${user.username} (#${user.id})`;
+      option.textContent = user.username;
       els.privateReceiverSelect.appendChild(option);
     });
   }
@@ -650,7 +650,7 @@ async function removeMember(userID) {
   const chat = getSelectedChat();
   if (!chat) return;
   const member = state.members.find((item) => item.id === userID);
-  const title = member ? member.username : `#${userID}`;
+  const title = member ? member.username : "tanlangan foydalanuvchi";
   if (!confirm(`${title} ni groupdan chiqarishni tasdiqlaysizmi?`)) return;
 
   try {
@@ -935,7 +935,7 @@ function renderUserList() {
     const item = document.createElement("li");
     item.className = "list-item";
     item.innerHTML = `
-      <div><strong>${escapeHTML(user.username)}</strong> <span>#${user.id}</span></div>
+      <div><strong>${escapeHTML(user.username)}</strong></div>
       <div class="chat-time">${escapeHTML(user.email || "email yo'q")}</div>
       <button type="button" class="btn mini" data-action="start-private" data-user-id="${user.id}">
         <i class="fa-regular fa-message"></i> Chat ochish
@@ -958,7 +958,7 @@ function renderChatMeta() {
     return;
   }
 
-  els.activeChatName.textContent = `${chat.chatName} (#${chat.chatId})`;
+  els.activeChatName.textContent = chat.chatName;
   els.activeChatInfo.textContent = `${chat.chatType.toUpperCase()} | role: ${chat.userRole || "-"} | unread: ${chat.unreadCount || 0}`;
   const isGroup = chat.chatType === "group";
   els.membersBtn.disabled = !isGroup;
@@ -1031,7 +1031,7 @@ function renderMembersList() {
     item.innerHTML = `
       <div>
         <strong>${escapeHTML(member.username)}</strong>
-        <div class="chat-time">#${member.id} ${escapeHTML(member.email || "")}</div>
+        <div class="chat-time">${escapeHTML(member.email || "")}</div>
       </div>
       ${canRemove ? `<button type="button" class="btn mini danger" data-action="remove-member" data-user-id="${member.id}">Chiqarish</button>` : `<span class="chat-time">siz</span>`}
     `;
@@ -1054,7 +1054,7 @@ function renderMemberCandidateList() {
     item.innerHTML = `
       <div>
         <strong>${escapeHTML(user.username)}</strong>
-        <div class="chat-time">#${user.id} ${escapeHTML(user.email || "")}</div>
+        <div class="chat-time">${escapeHTML(user.email || "")}</div>
       </div>
       <button type="button" class="btn mini" data-action="add-member" data-user-id="${user.id}">Qo'shish</button>
     `;
@@ -1076,7 +1076,7 @@ function renderGroupMemberChecklist() {
     const checked = state.groupSelectedMemberIds.has(user.id);
     const label = document.createElement("label");
     label.className = "check-item";
-    label.innerHTML = `<input type="checkbox" value="${user.id}" class="group-member-check" ${checked ? "checked" : ""}><span>${escapeHTML(user.username)} (#${user.id})</span>`;
+    label.innerHTML = `<input type="checkbox" value="${user.id}" class="group-member-check" ${checked ? "checked" : ""}><span>${escapeHTML(user.username)}</span>`;
     fragment.appendChild(label);
   });
   els.groupMemberChecklist.appendChild(fragment);
