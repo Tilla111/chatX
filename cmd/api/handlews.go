@@ -2,13 +2,15 @@ package main
 
 import (
 	"chatX/internal/ws"
+	"errors"
 	"net/http"
 	"strconv"
 )
 
 func (app *application) handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -19,7 +21,7 @@ func (app *application) handleWebSocket(w http.ResponseWriter, r *http.Request) 
 	}
 
 	client := &ws.Client{
-		ID:   strconv.FormatInt(userID, 10),
+		ID:   strconv.FormatInt(senderID.ID, 10),
 		Hub:  app.ws,
 		Conn: conn,
 		Send: make(chan []byte, 256),

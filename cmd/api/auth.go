@@ -8,36 +8,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
-
-func getUserIDFromRequest(r *http.Request) (int64, error) {
-	raw := strings.TrimSpace(r.Header.Get("X-User-ID"))
-	if raw == "" {
-		raw = strings.TrimSpace(r.URL.Query().Get("user_id"))
-	}
-	if raw == "" {
-		return 0, errors.New("X-User-ID header is required")
-	}
-
-	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || id <= 0 {
-		return 0, errors.New("X-User-ID must be a positive integer")
-	}
-
-	return id, nil
-}
-
-func (app *application) requireUserID(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	userID, err := getUserIDFromRequest(r)
-	if err != nil {
-		app.unauthorizedError(w, r, err)
-		return 0, false
-	}
-
-	return userID, true
-}
 
 func (app *application) buildActivationURL(token string) string {
 	baseURL := strings.TrimSpace(app.config.apiURL)
@@ -117,6 +92,79 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	if err := app.jsonResponse(w, http.StatusCreated, map[string]string{
 		"message": "registration successful. Check your email to activate your account.",
+	}); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+type RequestCreateToken struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
+}
+
+// createTokenHandler godoc
+// @Summary      Token yaratish
+// @Description  Foydalanuvchi email va parol asosida token yaratadi.
+// @Description  Body'da `email` va `password` maydonlari bo'lishi kerak. Validation qoidalari: har ikkalasi ham required.
+// @Description  Muvaffaqiyatli javob formati: `{"data":{"token":"..."}}`. Xatolik formati: `{"error":"<message>"}`.
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        payload  body      RequestCreateToken  true  "Token yaratish payload"
+// @Success      200      {object}  map[string]any     "{"data":{"token":"..."}}"
+// @Failure      400      {object}  map[string]string  "Body/validation xatosi"
+// @Failure      401      {object}  map[string]string  "Noto'g'ri username yoki parol"
+// @Failure      500      {object}  map[string]string  "Ichki server xatosi"
+// @Router       /users/authentication/token [post]
+
+func (app *application) CreateTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var req RequestCreateToken
+	if err := readJSON(w, r, &req); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(req); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	// Get User by email
+	user, err := app.services.UserSrvc.GetUserByEmail(r.Context(), req.Email)
+	if err != nil {
+		if errors.Is(err, store.SqlNotfound) {
+			app.unauthorizedError(w, r, errors.New("invalid email or password"))
+		} else {
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	//check password
+	if err := app.services.UserSrvc.CheckPassword(user, req.Password); err != nil {
+		app.unauthorizedError(w, r, errors.New("invalid email or password"))
+		return
+	}
+
+	//create token
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"sub": user.ID,
+		"aud": app.config.app.Audience,
+		"iss": app.config.app.Issuer,
+		"exp": now.Add(app.config.auth.token.exp).Unix(),
+		"iat": now.Unix(),
+		"nbf": now.Unix(),
+	}
+	token, err := app.auth.CreateToken(claims)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{
+		"token": token,
 	}); err != nil {
 		app.internalServerError(w, r, err)
 		return

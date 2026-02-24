@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chatX/internal/auth"
 	"chatX/internal/mailer"
 	service "chatX/internal/usecase"
 	"chatX/internal/ws"
@@ -22,6 +23,7 @@ type application struct {
 	ws       *ws.Hub
 	logger   zap.SugaredLogger
 	mailer   mailer.Client
+	auth     auth.AuthService
 }
 
 type config struct {
@@ -31,6 +33,22 @@ type config struct {
 	Upgrade websocket.Upgrader
 	mail    MailConfig
 	apiURL  string
+	app     appConfig
+	auth    authConfig
+}
+
+type appConfig struct {
+	Audience string
+	Issuer   string
+}
+
+type authConfig struct {
+	token tokenConfig
+}
+
+type tokenConfig struct {
+	secret string
+	exp    time.Duration
 }
 
 type DBConfig struct {
@@ -84,40 +102,49 @@ func (app *application) mount() *chi.Mux {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheck)
-		r.Get("/ws", app.handleWebSocket)
 
 		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
-		r.Route("/chats", func(r chi.Router) {
-			r.Post("/", app.CreatechatHandler)
-			r.Get("/", app.GetUserChatsHandler)
-			r.Delete("/{chat_id}", app.DeleteChatHandler)
-			r.Get("/{chat_id}/messages", app.GetMessagesHandler)
-		})
-
-		r.Route("/groups", func(r chi.Router) {
-			r.Post("/", app.CreateGroupHandler)
-			r.Patch("/{chat_id}", app.UpdateChatHandler)
-			r.Post("/{chat_id}/members", app.AddMemberHandler)
-			r.Get("/{chat_id}/members", app.GetMembersHandler)
-			r.Delete("/{chat_id}/{user_id}/member", app.DeleteMemberHandler)
-		})
-
-		r.Route("/messages", func(r chi.Router) {
-			r.Post("/", app.MessageCreateHandler)
-			r.Patch("/{id}", app.MessageUpdateHandler)
-			r.Delete("/{id}", app.MessageDeleteHandler)
-			r.Patch("/chats/{chat_id}/read", app.MarkAsReadHandler)
-		})
-
 		r.Route("/users", func(r chi.Router) {
-			r.Get("/", app.GetUserHandler)
 			r.Get("/activate/{token}", app.activateUserHandler)
 			r.Put("/activate/{token}", app.activateUserHandler)
 
 			r.Route("/authentication", func(r chi.Router) {
 				r.Post("/", app.registerUserHandler)
+				r.Post("/token", app.CreateTokenHandler)
+			})
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(app.AuthMiddleware)
+
+			r.Get("/ws", app.handleWebSocket)
+
+			r.Route("/chats", func(r chi.Router) {
+				r.Post("/", app.CreatechatHandler)
+				r.Get("/", app.GetUserChatsHandler)
+				r.Delete("/{chat_id}", app.DeleteChatHandler)
+				r.Get("/{chat_id}/messages", app.GetMessagesHandler)
+			})
+
+			r.Route("/groups", func(r chi.Router) {
+				r.Post("/", app.CreateGroupHandler)
+				r.Patch("/{chat_id}", app.UpdateChatHandler)
+				r.Post("/{chat_id}/members", app.AddMemberHandler)
+				r.Get("/{chat_id}/members", app.GetMembersHandler)
+				r.Delete("/{chat_id}/{user_id}/member", app.DeleteMemberHandler)
+			})
+
+			r.Route("/messages", func(r chi.Router) {
+				r.Post("/", app.MessageCreateHandler)
+				r.Patch("/{id}", app.MessageUpdateHandler)
+				r.Delete("/{id}", app.MessageDeleteHandler)
+				r.Patch("/chats/{chat_id}/read", app.MarkAsReadHandler)
+			})
+
+			r.Route("/users", func(r chi.Router) {
+				r.Get("/", app.GetUserHandler)
 			})
 		})
 	})

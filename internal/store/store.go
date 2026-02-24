@@ -33,6 +33,9 @@ type Storage struct {
 		CreateTokenActivate(ctx context.Context, userID int64, token string, exp time.Duration) error
 		GetUserByToken(ctx context.Context, token string) (*User, error)
 		Update(ctx context.Context, user *User) error
+		GetUserByEmail(ctx context.Context, email string) (*User, error)
+		ComparePassword(user *User, password string) error
+		GetUserByID(ctx context.Context, id int64) (*User, error)
 		Clean(ctx context.Context, token string) error
 	}
 

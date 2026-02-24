@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chatX/internal/auth"
 	"chatX/internal/db"
 	"chatX/internal/env"
 	"chatX/internal/mailer"
@@ -30,8 +31,8 @@ const Version = "v1.0.0"
 //
 // @securityDefinitions.apikey	ApiKeyAuth
 // @in							header
-// @name						X-User-ID
-// @description				Joriy foydalanuvchi IDsi (demo auth uchun)
+// @name						Authorization
+// @description				Bearer JWT token: `Bearer <token>`
 func main() {
 
 	cfgEnv, err := env.Load()
@@ -68,6 +69,16 @@ func main() {
 			},
 			fromEmail: cfgEnv.Email.FromEmail,
 			exp:       time.Hour * 24 * 3, //3 Days
+		},
+		auth: authConfig{
+			token: tokenConfig{
+				secret: cfgEnv.Auth.SecretKey,
+				exp:    time.Hour * 24, //1 Day
+			},
+		},
+		app: appConfig{
+			Audience: cfgEnv.App.Audience,
+			Issuer:   cfgEnv.App.Issuer,
 		},
 	}
 
@@ -107,12 +118,15 @@ func main() {
 		cfg.mail.fromEmail,
 	)
 
+	authService := auth.NewJWTAuthenticator(cfg.auth.token.secret, cfgEnv.App.Audience, cfgEnv.App.Issuer)
+
 	app := &application{
 		config:   cfg,
 		services: *services,
 		ws:       hub,
 		logger:   logger,
 		mailer:   mailer,
+		auth:     authService,
 	}
 
 	handler := app.mount()

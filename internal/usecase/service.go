@@ -16,6 +16,9 @@ type Services struct {
 	UserSrvc interface {
 		RegisterUser(ctx context.Context, user RequestRegister, exp time.Duration) (string, error)
 		UserActivate(ctx context.Context, token string) error
+		GetUserByEmail(ctx context.Context, email string) (*store.User, error)
+		GetUserByID(ctx context.Context, id int64) (*store.User, error)
+		CheckPassword(user *store.User, password string) error
 		GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error)
 	}
 

@@ -164,6 +164,59 @@ func (s *UserStore) Update(ctx context.Context, user *User) error {
 	return nil
 }
 
+func (s *UserStore) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	query := `SELECT id, username, email, password, created_at, is_active FROM users WHERE email = $1 AND is_active = true;`
+
+	var u User
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	err := s.db.QueryRowContext(ctx, query, email).Scan(
+		&u.ID,
+		&u.UserName,
+		&u.Email,
+		&u.Password.hash,
+		&u.CreatedAt,
+		&u.IsActive,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, SqlNotfound
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
+
+func (s *UserStore) ComparePassword(user *User, password string) error {
+	return bcrypt.CompareHashAndPassword(user.Password.hash, []byte(password))
+}
+
+func (s *UserStore) GetUserByID(ctx context.Context, id int64) (*User, error) {
+	query := `SELECT id, username, email, created_at, is_active FROM users WHERE id = $1;`
+
+	var u User
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&u.ID,
+		&u.UserName,
+		&u.Email,
+		&u.CreatedAt,
+		&u.IsActive,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, SqlNotfound
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
+
 func (s *UserStore) Clean(ctx context.Context, token string) error {
 	query := `DELETE FROM user_invitations WHERE token = $1`
 

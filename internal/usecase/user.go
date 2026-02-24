@@ -98,6 +98,18 @@ func (s *UserSrvc) UserActivate(ctx context.Context, token string) error {
 
 }
 
+func (s *UserSrvc) GetUserByEmail(ctx context.Context, email string) (*store.User, error) {
+	return s.repo.UserStore.GetUserByEmail(ctx, email)
+}
+
+func (s *UserSrvc) GetUserByID(ctx context.Context, id int64) (*store.User, error) {
+	return s.repo.UserStore.GetUserByID(ctx, id)
+}
+
+func (s *UserSrvc) CheckPassword(user *store.User, password string) error {
+	return s.repo.UserStore.ComparePassword(user, password)
+}
+
 func (s *UserSrvc) GetUsers(ctx context.Context, userID int, pg *store.PaginationQuery) ([]User, error) {
 
 	var users []User

@@ -14,6 +14,8 @@ type Config struct {
 		ENV            string   `yaml:"env"`
 		APIURL         string   `yaml:"api_url"`
 		AllowedOrigins []string `yaml:"allowed_origins"`
+		Audience       string   `yaml:"audience"`
+		Issuer         string   `yaml:"issuer"`
 	} `yaml:"app"`
 
 	Server struct {
@@ -36,6 +38,9 @@ type Config struct {
 		Username  string `yaml:"username"`
 		Password  string `yaml:"password"`
 		FromEmail string `yaml:"fromEmail"`
+	}
+	Auth struct {
+		SecretKey string `yaml:"secret_key"`
 	}
 }
 
@@ -86,6 +91,9 @@ func Load() (*Config, error) {
 	c.Email.Username = getenv("MAILTRAP_USERNAME", c.Email.Username)
 	c.Email.Password = getenv("MAILTRAP_PASSWORD", c.Email.Password)
 	c.Email.FromEmail = getenv("FROM_EMAIL", c.Email.FromEmail)
+	c.App.Audience = getenv("JWT_AUDIENCE", c.App.Audience)
+	c.App.Issuer = getenv("JWT_ISSUER", c.App.Issuer)
+	c.Auth.SecretKey = getenv("JWT_SECRET_KEY", c.Auth.SecretKey)
 
 	return c, nil
 }

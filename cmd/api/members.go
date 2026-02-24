@@ -19,17 +19,18 @@ type addMemberRequest struct {
 // @Description  Berilgan group chat uchun a'zolar ro'yxatini qaytaradi. Faqat chat a'zosi ko'ra oladi.
 // @Tags         members
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                true   "Group chat ID"
 // @Success      200        {object}  map[string]any     "{"data":[...a'zolar...]}"
 // @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /groups/{chat_id}/members [get]
 func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -39,7 +40,7 @@ func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -66,19 +67,20 @@ func (app *application) GetMembersHandler(w http.ResponseWriter, r *http.Request
 // @Tags         members
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int               true   "Amalni bajarayotgan foydalanuvchi IDsi"
+// @Param        Authorization  header    string               true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int               true   "Group chat ID"
 // @Param        payload    body      addMemberRequest  true   "Qo'shiladigan user ID"
 // @Success      201        {object}  map[string]any    "{"data":{"result":"added","user_id":21}}"
 // @Failure      400        {object}  map[string]string "Path param yoki body noto'g'ri"
-// @Failure      401        {object}  map[string]string "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string "Ruxsat yo'q"
 // @Failure      404        {object}  map[string]string "Chat topilmadi"
 // @Failure      500        {object}  map[string]string "Ichki server xatosi"
 // @Router       /groups/{chat_id}/members [post]
 func (app *application) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -98,7 +100,7 @@ func (app *application) AddMemberHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = app.services.MemberSRV.Add(r.Context(), actorID, chatID, int(req.UserID))
+	err = app.services.MemberSRV.Add(r.Context(), senderID.ID, chatID, int(req.UserID))
 	if err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
@@ -125,19 +127,20 @@ func (app *application) AddMemberHandler(w http.ResponseWriter, r *http.Request)
 // @Summary      A'zoni groupdan chiqarish
 // @Description  Groupdan userni chiqaradi. O'zini chiqarish mumkin, boshqa userni esa owner/admin chiqara oladi.
 // @Tags         members
-// @Param        X-User-ID  header    int                true   "Amalni bajarayotgan foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                true   "Group chat ID"
 // @Param        user_id    path      int                true   "Chiqariladigan user ID"
 // @Success      204        "Muvaffaqiyatli chiqarildi"
 // @Failure      400        {object}  map[string]string  "Path param noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string  "Ruxsat yo'q"
 // @Failure      404        {object}  map[string]string  "Member yoki chat topilmadi"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /groups/{chat_id}/{user_id}/member [delete]
 func (app *application) DeleteMemberHandler(w http.ResponseWriter, r *http.Request) {
-	actorID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -153,7 +156,7 @@ func (app *application) DeleteMemberHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.services.MemberSRV.Delete(r.Context(), actorID, chatID, targetID); err != nil {
+	if err := app.services.MemberSRV.Delete(r.Context(), senderID.ID, chatID, targetID); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)

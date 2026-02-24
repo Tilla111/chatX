@@ -5,6 +5,8 @@ app:
   allowed_origins:
     - http://localhost:8080
     - http://127.0.0.1:8080
+  audience: chatX Audience
+  issuer: chatX Issuer
 
 server:
   port: "8080"
@@ -25,3 +27,7 @@ email:
   username: "4ffa30e68273f7"
   password: "268f9adca7e33e"
   fromEmail: "jayhun231@gmail.com"
+
+auth:
+  secret_key: "your-secret-key"
+

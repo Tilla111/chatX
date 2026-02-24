@@ -14,18 +14,19 @@ import (
 // @Description  Joriy userdan tashqari userlarni pagination va search bilan qaytaradi.
 // @Tags         users
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        limit      query     int                false  "Sahifadagi element soni (1..20)" default(20)
 // @Param        offset     query     int                false  "Qaysi elementdan boshlab olish" default(0)
 // @Param        search     query     string             false  "Username bo'yicha qidiruv (max 10 ta belgi)"
 // @Success      200        {object}  map[string]any     "{"data":[...foydalanuvchilar...]}"
 // @Failure      400        {object}  map[string]string  "Query param noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /users [get]
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	currentUserID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -46,7 +47,7 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := app.services.UserSrvc.GetUsers(r.Context(), int(currentUserID), query)
+	users, err := app.services.UserSrvc.GetUsers(r.Context(), int(senderID.ID), query)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -98,4 +99,9 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+func getUserfromContext(r *http.Request) (*store.User, bool) {
+	user, ok := r.Context().Value("user").(*store.User)
+	return user, ok
 }

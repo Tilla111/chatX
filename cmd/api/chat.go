@@ -32,16 +32,17 @@ type updateGroupRequest struct {
 // @Tags         chats
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int                       true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                       true   "Bearer token: Bearer <token>"
 // @Param        payload    body      createPrivateChatRequest  true   "Private chat uchun receiver ma'lumoti"
 // @Success      201        {object}  map[string]any            "{"data":{"chat_id":12}}"
 // @Failure      400        {object}  map[string]string         "So'rov noto'g'ri"
-// @Failure      401        {object}  map[string]string         "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string         "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      500        {object}  map[string]string         "Ichki server xatosi"
 // @Router       /chats [post]
 func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request) {
-	senderID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -56,7 +57,7 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	chatID, err := app.services.ChatSRVC.CreatePrivateChat(r.Context(), senderID, req.ReceiverID)
+	chatID, err := app.services.ChatSRVC.CreatePrivateChat(r.Context(), senderID.ID, req.ReceiverID)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -78,16 +79,18 @@ func (app *application) CreatechatHandler(w http.ResponseWriter, r *http.Request
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int                 true   "Joriy foydalanuvchi IDsi (owner bo'ladi)"
+// @Param        Authorization  header    string                 true   "Bearer token: Bearer <token> (owner bo'ladi)"
 // @Param        payload    body      createGroupRequest  true   "Group yaratish ma'lumotlari"
 // @Success      201        {object}  map[string]any      "{"data":{"chat_id":17}}"
 // @Failure      400        {object}  map[string]string   "So'rov noto'g'ri"
-// @Failure      401        {object}  map[string]string   "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string   "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      500        {object}  map[string]string   "Ichki server xatosi"
 // @Router       /groups [post]
 func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	senderID, ok := app.requireUserID(w, r)
+
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -103,7 +106,7 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	group := service.Group{
-		SenderID:    senderID,
+		SenderID:    senderID.ID,
 		ReceiverID:  req.MemberIDs,
 		Name:        req.Name,
 		Description: req.Description,
@@ -130,20 +133,20 @@ func (app *application) CreateGroupHandler(w http.ResponseWriter, r *http.Reques
 // @Description  Joriy foydalanuvchiga tegishli private va group chatlar ro'yxatini qaytaradi.
 // @Tags         chats
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        search     query     string             false  "Chat nomi bo'yicha qidiruv"
 // @Success      200        {object}  map[string]any     "{"data":[...chatlar...]}"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats [get]
 func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
-
 	searchTerm := r.URL.Query().Get("search")
-	chats, err := app.services.ChatSRVC.GetUserChats(r.Context(), userID, searchTerm)
+	chats, err := app.services.ChatSRVC.GetUserChats(r.Context(), senderID.ID, searchTerm)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -160,18 +163,19 @@ func (app *application) GetUserChatsHandler(w http.ResponseWriter, r *http.Reque
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int                 true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                 true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                 true   "Group chat ID"
 // @Param        payload    body      updateGroupRequest  true   "Yangilanadigan qiymatlar"
 // @Success      200        {object}  map[string]any      "{"data":{"result":"updated"}}"
 // @Failure      400        {object}  map[string]string   "ID yoki body noto'g'ri"
-// @Failure      401        {object}  map[string]string   "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string   "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      404        {object}  map[string]string   "Group topilmadi"
 // @Failure      500        {object}  map[string]string   "Ichki server xatosi"
 // @Router       /groups/{chat_id} [patch]
 func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -198,7 +202,7 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 		Description: req.Description,
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -228,27 +232,27 @@ func (app *application) UpdateChatHandler(w http.ResponseWriter, r *http.Request
 // @Summary      Chatni o'chirish
 // @Description  Berilgan `chat_id` bo'yicha chatni o'chiradi.
 // @Tags         chats
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                true   "Chat ID"
 // @Success      204        "Muvaffaqiyatli o'chirildi"
 // @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      404        {object}  map[string]string  "Chat topilmadi"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats/{chat_id} [delete]
 func (app *application) DeleteChatHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
-
 	chatID, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
 	if err != nil || chatID <= 0 {
 		app.badRequestError(w, r, errors.New("chat_id must be a positive integer"))
 		return
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), int64(chatID), senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

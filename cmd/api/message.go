@@ -33,17 +33,18 @@ func parsePathInt64(raw string, paramName string) (int64, error) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int                   true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                   true   "Bearer token: Bearer <token>"
 // @Param        payload    body      createMessageRequest  true   "Xabar yuborish ma'lumotlari"
 // @Success      201        {object}  map[string]any        "{"data":{...xabar...}}"
 // @Failure      400        {object}  map[string]string     "Body noto'g'ri"
-// @Failure      401        {object}  map[string]string     "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string     "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string     "User chat a'zosi emas"
 // @Failure      500        {object}  map[string]string     "Ichki server xatosi"
 // @Router       /messages [post]
 func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -57,7 +58,7 @@ func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), req.ChatID, userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), req.ChatID, senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -69,7 +70,7 @@ func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Requ
 
 	msg, err := app.services.MessageSRV.Create(r.Context(), service.Message{
 		ChatID:      req.ChatID,
-		SenderID:    userID,
+		SenderID:    senderID.ID,
 		MessageText: req.MessageText,
 	})
 	if err != nil {
@@ -107,17 +108,18 @@ func (app *application) MessageCreateHandler(w http.ResponseWriter, r *http.Requ
 // @Description  Berilgan chatdagi xabarlar tarixini qaytaradi. Faqat chat a'zosi ko'ra oladi.
 // @Tags         messages
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                true   "Chat ID"
 // @Success      200        {object}  map[string]any     "{"data":[...xabarlar...]}"
 // @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /chats/{chat_id}/messages [get]
 func (app *application) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -127,7 +129,7 @@ func (app *application) GetMessagesHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -153,17 +155,18 @@ func (app *application) GetMessagesHandler(w http.ResponseWriter, r *http.Reques
 // @Description  Joriy foydalanuvchi uchun berilgan chatdagi barcha kiruvchi xabarlarni o'qilgan holatiga o'tkazadi.
 // @Tags         messages
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        chat_id    path      int                true   "Chat ID"
 // @Success      200        {object}  map[string]any     "{"data":{"status":"success"}}"
 // @Failure      400        {object}  map[string]string  "chat_id noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      403        {object}  map[string]string  "User chat a'zosi emas"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /messages/chats/{chat_id}/read [patch]
 func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -173,7 +176,7 @@ func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, userID)
+	isMember, err := app.services.MemberSRV.IsMember(r.Context(), chatID, senderID.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -183,7 +186,7 @@ func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := app.services.MessageSRV.MarkChatAsRead(r.Context(), chatID, userID); err != nil {
+	if err := app.services.MessageSRV.MarkChatAsRead(r.Context(), chatID, senderID.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -194,7 +197,7 @@ func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	readerID := strconv.FormatInt(userID, 10)
+	readerID := strconv.FormatInt(senderID.ID, 10)
 	for _, user := range memberUsers {
 		recipientID := strconv.FormatInt(user.ID, 10)
 		if recipientID == readerID {
@@ -214,18 +217,19 @@ func (app *application) MarkAsReadHandler(w http.ResponseWriter, r *http.Request
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        X-User-ID  header    int                   true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                   true   "Bearer token: Bearer <token>"
 // @Param        id         path      int                   true   "Xabar ID"
 // @Param        payload    body      updateMessageRequest  true   "Yangilangan xabar matni"
 // @Success      200        {object}  map[string]any        "{"data":{"result":"updated"}}"
 // @Failure      400        {object}  map[string]string     "ID yoki body noto'g'ri"
-// @Failure      401        {object}  map[string]string     "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string     "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      404        {object}  map[string]string     "Xabar topilmadi yoki userga tegishli emas"
 // @Failure      500        {object}  map[string]string     "Ichki server xatosi"
 // @Router       /messages/{id} [patch]
 func (app *application) MessageUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -256,7 +260,7 @@ func (app *application) MessageUpdateHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := app.services.MessageSRV.UpdateMessage(r.Context(), msgID, userID, req.MessageText); err != nil {
+	if err := app.services.MessageSRV.UpdateMessage(r.Context(), msgID, senderID.ID, req.MessageText); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)
@@ -289,17 +293,18 @@ func (app *application) MessageUpdateHandler(w http.ResponseWriter, r *http.Requ
 // @Description  Joriy foydalanuvchi o'zi yuborgan xabarni o'chiradi.
 // @Tags         messages
 // @Produce      json
-// @Param        X-User-ID  header    int                true   "Joriy foydalanuvchi IDsi"
+// @Param        Authorization  header    string                true   "Bearer token: Bearer <token>"
 // @Param        id         path      int                true   "Xabar ID"
 // @Success      200        {object}  map[string]any     "{"data":{"result":"deleted"}}"
 // @Failure      400        {object}  map[string]string  "ID noto'g'ri"
-// @Failure      401        {object}  map[string]string  "X-User-ID yuborilmagan yoki noto'g'ri"
+// @Failure      401        {object}  map[string]string  "Authorization Bearer token yuborilmagan yoki noto'g'ri"
 // @Failure      404        {object}  map[string]string  "Xabar topilmadi yoki userga tegishli emas"
 // @Failure      500        {object}  map[string]string  "Ichki server xatosi"
 // @Router       /messages/{id} [delete]
 func (app *application) MessageDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := app.requireUserID(w, r)
+	senderID, ok := getUserfromContext(r)
 	if !ok {
+		app.unauthorizedError(w, r, errors.New("user not found in context"))
 		return
 	}
 
@@ -320,7 +325,7 @@ func (app *application) MessageDeleteHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := app.services.MessageSRV.DeleteMessage(r.Context(), msgID, userID); err != nil {
+	if err := app.services.MessageSRV.DeleteMessage(r.Context(), msgID, senderID.ID); err != nil {
 		switch {
 		case errors.Is(err, store.SqlNotfound):
 			app.notFoundError(w, r, err)
