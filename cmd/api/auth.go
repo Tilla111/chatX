@@ -150,12 +150,13 @@ func (app *application) CreateTokenHandler(w http.ResponseWriter, r *http.Reques
 	//create token
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"sub": user.ID,
-		"aud": app.config.app.Audience,
-		"iss": app.config.app.Issuer,
-		"exp": now.Add(app.config.auth.token.exp).Unix(),
-		"iat": now.Unix(),
-		"nbf": now.Unix(),
+		"sub":      user.ID,
+		"username": user.UserName,
+		"aud":      app.config.app.Audience,
+		"iss":      app.config.app.Issuer,
+		"exp":      now.Add(app.config.auth.token.exp).Unix(),
+		"iat":      now.Unix(),
+		"nbf":      now.Unix(),
 	}
 	token, err := app.auth.CreateToken(claims)
 	if err != nil {

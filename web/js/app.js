@@ -5,6 +5,7 @@ const LAST_EMAIL_STORAGE_KEY = "chatx_last_email";
 const state = {
   token: null,
   currentUserId: null,
+  currentUsername: null,
   chats: [],
   users: [],
   groupMemberPool: [],
@@ -187,12 +188,14 @@ function hydrateSessionFromStorage() {
 function setSessionToken(token, persist) {
   const claims = parseTokenClaims(token);
   const userID = Number(claims?.sub || 0);
+  const username = normalizeUsername(claims?.username);
   const exp = Number(claims?.exp || 0);
   if (!Number.isInteger(userID) || userID <= 0) return false;
   if (exp > 0 && Date.now() >= exp * 1000) return false;
 
   state.token = token;
   state.currentUserId = userID;
+  state.currentUsername = username || null;
   if (persist) localStorage.setItem(TOKEN_STORAGE_KEY, token);
   renderSessionBadge();
   renderWsBadge();
@@ -202,6 +205,7 @@ function setSessionToken(token, persist) {
 function clearSessionState() {
   state.token = null;
   state.currentUserId = null;
+  state.currentUsername = null;
   state.chats = [];
   state.users = [];
   state.groupMemberPool = [];
@@ -277,7 +281,7 @@ async function submitLogin(event) {
     els.loginPasswordInput.value = "";
     setAuthHint("Muvaffaqiyatli login qilindi.", "ok");
     showWorkspace();
-    toast(`Xush kelibsiz, user #${state.currentUserId}.`, "ok");
+    toast(`Xush kelibsiz, ${getCurrentUserDisplayName()}.`, "ok");
     await refreshAllData();
     connectWebSocket();
   } catch (error) {
@@ -729,7 +733,7 @@ async function handleSocketEvent(payload) {
       id: Date.now(),
       chatId: chatID,
       senderId: senderID,
-      senderName: payload.sender_name || `User #${senderID}`,
+      senderName: normalizeUsername(payload.sender_name) || getUserDisplayName(senderID),
       content: payload.content || "",
       createdAt: payload.created_at || new Date().toISOString(),
       isRead: false,
@@ -784,7 +788,7 @@ async function handleSocketEvent(payload) {
       }
     });
     if (hasUpdates) renderMessages(false);
-    toast(`User #${readerID} xabarlarni o'qidi.`, "info");
+    toast(`${getUserDisplayName(readerID)} xabarlarni o'qidi.`, "info");
   }
 }
 
@@ -878,7 +882,7 @@ function renderWsBadge() {
 
   if (state.wsConnected) {
     els.wsBadge.className = "pill ok";
-    els.wsBadge.textContent = `WS: ulangan (user #${state.currentUserId})`;
+    els.wsBadge.textContent = `WS: ulangan (${getCurrentUserDisplayName()})`;
   } else {
     els.wsBadge.className = "pill offline";
     els.wsBadge.textContent = "WS: uzilgan";
@@ -886,7 +890,7 @@ function renderWsBadge() {
 }
 
 function renderSessionBadge() {
-  els.sessionUserBadge.textContent = state.currentUserId ? `Ulangan: User #${state.currentUserId}` : "User aniqlanmagan";
+  els.sessionUserBadge.textContent = state.currentUserId ? `Ulangan: ${getCurrentUserDisplayName()}` : "User aniqlanmagan";
 }
 
 function renderChatList() {
@@ -980,7 +984,7 @@ function renderMessages(shouldScroll = true) {
     item.className = `message-item${mine ? " mine" : ""}`;
     item.innerHTML = `
       <div class="message-head">
-        <span class="message-author">${escapeHTML(message.senderName || `User #${message.senderId}`)}</span>
+        <span class="message-author">${escapeHTML(message.senderName || getUserDisplayName(message.senderId))}</span>
         <span class="message-time">
           ${formatDate(message.createdAt)}
           ${mine ? renderMessageStatus(message) : ""}
@@ -1144,11 +1148,12 @@ function normalizeUser(raw) {
 }
 
 function normalizeMessage(raw, fallbackChatID) {
+  const senderID = Number(raw.sender_id ?? raw.senderId ?? raw.SenderID ?? 0);
   return {
     id: Number(raw.id ?? raw.ID ?? Date.now()),
     chatId: Number(raw.chat_id ?? raw.chatId ?? raw.ChatID ?? fallbackChatID ?? state.selectedChatId ?? 0),
-    senderId: Number(raw.sender_id ?? raw.senderId ?? raw.SenderID ?? 0),
-    senderName: String(raw.sender_name ?? raw.senderName ?? raw.SenderName ?? `User #${raw.sender_id || "?"}`),
+    senderId: senderID,
+    senderName: normalizeUsername(raw.sender_name ?? raw.senderName ?? raw.SenderName) || getUserDisplayName(senderID),
     content: String(raw.content ?? raw.message_text ?? raw.messageText ?? raw.MessageText ?? ""),
     createdAt: raw.created_at ?? raw.createdAt ?? raw.CreatedAt ?? new Date().toISOString(),
     isRead: Boolean(raw.is_read ?? raw.isRead ?? raw.IsRead ?? false),
@@ -1174,6 +1179,36 @@ function parseTokenClaims(token) {
   } catch {
     return null;
   }
+}
+
+function normalizeUsername(value) {
+  const text = String(value ?? "").trim();
+  return text || null;
+}
+
+function getCurrentUserDisplayName() {
+  return state.currentUsername || `User #${state.currentUserId}`;
+}
+
+function getUserDisplayName(userID) {
+  if (!Number.isInteger(userID) || userID <= 0) {
+    return "Unknown user";
+  }
+
+  if (state.currentUserId === userID && state.currentUsername) {
+    return state.currentUsername;
+  }
+
+  const pools = [state.users, state.members, state.groupMemberPool, state.memberCandidates];
+  for (const pool of pools) {
+    const user = pool.find((item) => item.id === userID && normalizeUsername(item.username));
+    if (user) return user.username;
+  }
+
+  const fromMessage = state.messages.find((item) => item.senderId === userID && normalizeUsername(item.senderName));
+  if (fromMessage) return fromMessage.senderName;
+
+  return `User #${userID}`;
 }
 
 function formatDate(raw) {

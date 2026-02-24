@@ -114,6 +114,8 @@ func (app *application) mount() *chi.Mux {
 				r.Post("/", app.registerUserHandler)
 				r.Post("/token", app.CreateTokenHandler)
 			})
+
+			r.With(app.AuthMiddleware).Get("/", app.GetUserHandler)
 		})
 
 		r.Group(func(r chi.Router) {
@@ -143,9 +145,6 @@ func (app *application) mount() *chi.Mux {
 				r.Patch("/chats/{chat_id}/read", app.MarkAsReadHandler)
 			})
 
-			r.Route("/users", func(r chi.Router) {
-				r.Get("/", app.GetUserHandler)
-			})
 		})
 	})
 
